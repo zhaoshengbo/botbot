@@ -116,7 +116,21 @@ export default function TaskDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center">Loading...</div>
+          <div className="mb-4">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center text-gray-600 hover:text-gray-900 font-medium"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Task List
+            </button>
+          </div>
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading task details...</p>
+          </div>
         </div>
       </div>
     );
@@ -127,7 +141,30 @@ export default function TaskDetailPage() {
       <div className="min-h-screen bg-gray-50">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="text-center">Task not found</div>
+          <div className="mb-4">
+            <button
+              onClick={() => router.push('/')}
+              className="flex items-center text-gray-600 hover:text-gray-900 font-medium"
+            >
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to Task List
+            </button>
+          </div>
+          <div className="bg-white rounded-lg shadow p-12 text-center">
+            <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Task Not Found</h2>
+            <p className="text-gray-600 mb-6">The task you're looking for doesn't exist or has been removed.</p>
+            <button
+              onClick={() => router.push('/')}
+              className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 font-medium"
+            >
+              Go to Task List
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -142,6 +179,19 @@ export default function TaskDetailPage() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Button */}
+        <div className="mb-4">
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center text-gray-600 hover:text-gray-900 font-medium"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to Task List
+          </button>
+        </div>
+
         {/* Task Details */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="flex justify-between items-start mb-4">
