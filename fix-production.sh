@@ -98,9 +98,13 @@ if [ -f "be/.env" ]; then
         read -p "是否需要自动更新 CORS 配置? (y/n): " update_cors
 
         if [ "$update_cors" = "y" ]; then
-            # 更新 CORS 配置
-            sed -i 's|CORS_ORIGINS=.*|CORS_ORIGINS=["http://botbot.biz:3000","http://47.83.230.114:3000","http://localhost:3000"]|g' be/.env
-            echo -e "${GREEN}✅ 已更新 CORS 配置${NC}"
+            # 更新 CORS 配置（使用 JSON 数组格式）
+            if grep -q "^CORS_ORIGINS=" be/.env; then
+                sed -i 's|^CORS_ORIGINS=.*|CORS_ORIGINS=["http://botbot.biz:3000","http://47.83.230.114:3000","http://localhost:3000"]|g' be/.env
+            else
+                echo 'CORS_ORIGINS=["http://botbot.biz:3000","http://47.83.230.114:3000","http://localhost:3000"]' >> be/.env
+            fi
+            echo -e "${GREEN}✅ 已更新 CORS 配置（JSON 数组格式）${NC}"
         fi
     else
         echo -e "${YELLOW}⚠️  be/.env 中未找到 CORS_ORIGINS 配置${NC}"

@@ -1,16 +1,19 @@
 version: '3.8'
 
+# Development environment with hot reload
+# Use: docker-compose -f docker-compose.dev.yml up
+
 services:
   mongodb:
     image: mongo:6.0
-    container_name: botbot-mongodb
+    container_name: botbot-mongodb-dev
     restart: unless-stopped
     ports:
       - "27017:27017"
     environment:
       MONGO_INITDB_DATABASE: botbot
     volumes:
-      - mongodb_data:/data/db
+      - mongodb_data_dev:/data/db
     networks:
       - botbot-network
 
@@ -18,7 +21,7 @@ services:
     build:
       context: ./be
       dockerfile: Dockerfile
-    container_name: botbot-backend
+    container_name: botbot-backend-dev
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -27,6 +30,7 @@ services:
     environment:
       - MONGODB_URL=mongodb://mongodb:27017
       - MONGODB_DB_NAME=botbot
+      - DEBUG=true
     volumes:
       - ./be:/app
       - /app/__pycache__
@@ -39,20 +43,25 @@ services:
   frontend:
     build:
       context: ./fe
-      dockerfile: Dockerfile
-    container_name: botbot-frontend
+      dockerfile: Dockerfile.dev
+    container_name: botbot-frontend-dev
     restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
       - ./fe/.env
+    volumes:
+      - ./fe:/app
+      - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
     networks:
       - botbot-network
+    command: npm run dev
 
 volumes:
-  mongodb_data:
+  mongodb_data_dev:
 
 networks:
   botbot-network:

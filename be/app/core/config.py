@@ -1,6 +1,7 @@
 """Application Configuration"""
 from pydantic_settings import BaseSettings
 from typing import List
+import json
 
 
 class Settings(BaseSettings):
@@ -32,8 +33,8 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     CLAUDE_MODEL: str = "claude-3-5-sonnet-20241022"
 
-    # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    # CORS - 支持多种格式
+    CORS_ORIGINS: str = "http://localhost:3000"
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 100
@@ -41,6 +42,34 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+
+    def get_cors_origins(self) -> List[str]:
+        """
+        Parse CORS_ORIGINS from environment variable
+
+        Supports multiple formats:
+        1. JSON array: ["http://localhost:3000","http://example.com"]
+        2. Comma-separated: http://localhost:3000,http://example.com
+        3. Single string: http://localhost:3000
+        """
+        if not self.CORS_ORIGINS:
+            return ["http://localhost:3000"]
+
+        origins_str = self.CORS_ORIGINS.strip()
+
+        # Try JSON format
+        if origins_str.startswith('['):
+            try:
+                return json.loads(origins_str)
+            except json.JSONDecodeError:
+                pass
+
+        # Try comma-separated
+        if ',' in origins_str:
+            return [origin.strip() for origin in origins_str.split(',') if origin.strip()]
+
+        # Single origin
+        return [origins_str]
 
 
 settings = Settings()
