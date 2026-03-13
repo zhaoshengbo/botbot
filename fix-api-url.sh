@@ -73,9 +73,11 @@ echo "⏸️  停止当前服务..."
 docker-compose down
 
 # 清除前端缓存
-echo "🗑️  清除前端构建缓存..."
+echo "🗑️  清除前端构建缓存和 Docker 缓存..."
 rm -rf fe/.next
 rm -rf fe/node_modules/.cache
+rm -rf fe/.next/cache
+docker rmi botbot-frontend 2>/dev/null || true
 
 # 重新构建前端
 echo ""
