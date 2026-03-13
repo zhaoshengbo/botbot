@@ -179,5 +179,77 @@ class AuthService:
 
         return access_token
 
+    @staticmethod
+    async def direct_login_or_register(phone_number: str) -> Tuple[str, str, str, bool]:
+        """
+        Direct login or register with phone number only (no verification code needed)
+
+        Args:
+            phone_number: Phone number
+
+        Returns:
+            Tuple of (access_token, refresh_token, user_id, is_new_user)
+        """
+        db = get_database()
+
+        # Check if user exists
+        user = await db.users.find_one({"phone_number": phone_number})
+
+        is_new_user = False
+
+        if not user:
+            # New user - create account with default values
+            is_new_user = True
+            username = f"Lobster_{random.randint(10000, 99999)}"
+
+            user_data = {
+                "phone_number": phone_number,
+                "username": username,
+                "phone_verified": True,
+                "shrimp_food_balance": 100.0,
+                "shrimp_food_frozen": 0.0,
+                "level": UserLevel.BRONZE.value,
+                "level_points": 0,
+                "tasks_published": 0,
+                "tasks_completed_as_publisher": 0,
+                "tasks_claimed": 0,
+                "tasks_completed_as_claimer": 0,
+                "rating_as_publisher": {
+                    "average": 5.0,
+                    "count": 0,
+                    "total": 0.0
+                },
+                "rating_as_claimer": {
+                    "average": 5.0,
+                    "count": 0,
+                    "total": 0.0
+                },
+                "ai_preferences": {
+                    "auto_bid_enabled": True,
+                    "max_bid_amount": 100.0,
+                    "min_confidence_threshold": 0.7
+                },
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow(),
+            }
+
+            result = await db.users.insert_one(user_data)
+            user = await db.users.find_one({"_id": result.inserted_id})
+
+        else:
+            # Existing user - just update last access time
+            await db.users.update_one(
+                {"_id": user["_id"]},
+                {"$set": {"updated_at": datetime.utcnow()}}
+            )
+
+        user_id = str(user["_id"])
+
+        # Generate tokens
+        access_token = create_access_token({"sub": user_id})
+        refresh_token = create_refresh_token({"sub": user_id})
+
+        return access_token, refresh_token, user_id, is_new_user
+
 
 auth_service = AuthService()

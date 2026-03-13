@@ -110,6 +110,15 @@ class APIClient {
     return data;
   }
 
+  async directLogin(phone_number: string): Promise<AuthTokens> {
+    const { data } = await this.client.post('/auth/direct-login', {
+      phone_number,
+    });
+    this.setToken(data.access_token);
+    this.setRefreshToken(data.refresh_token);
+    return data;
+  }
+
   async getCurrentUser(): Promise<User> {
     const { data } = await this.client.get('/auth/me');
     return data;

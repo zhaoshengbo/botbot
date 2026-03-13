@@ -56,6 +56,32 @@ async def verify_code_and_login(request: VerifyCodeRequest):
         )
 
 
+@router.post("/direct-login", response_model=TokenResponse)
+async def direct_login_or_register(request: SendCodeRequest):
+    """Direct login/register with phone number only (no verification code)"""
+    try:
+        access_token, refresh_token, user_id, is_new_user = await auth_service.direct_login_or_register(
+            request.phone_number
+        )
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            user_id=user_id
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
 @router.post("/refresh", response_model=dict)
 async def refresh_token(request: RefreshTokenRequest):
     """Refresh access token"""
