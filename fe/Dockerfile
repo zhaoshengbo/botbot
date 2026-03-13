@@ -6,8 +6,8 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-# Use npm install since we don't have package-lock.json
-RUN npm install --frozen-lockfile 2>/dev/null || npm install
+# Install all dependencies including devDependencies (needed for build)
+RUN npm install
 
 # Rebuild the source code only when needed
 FROM base AS builder
