@@ -1,6 +1,7 @@
 """Application Configuration"""
 from pydantic_settings import BaseSettings
-from typing import List
+from pydantic import field_validator
+from typing import List, Union
 import json
 
 
@@ -33,11 +34,29 @@ class Settings(BaseSettings):
     ANTHROPIC_API_KEY: str = ""
     CLAUDE_MODEL: str = "claude-3-5-sonnet-20241022"
 
-    # CORS - 支持多种格式
-    CORS_ORIGINS: str = "http://localhost:3000"
+    # CORS - 支持多种格式 (str or list)
+    CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000"
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 100
+
+    @field_validator('CORS_ORIGINS', mode='before')
+    @classmethod
+    def parse_cors_origins(cls, v):
+        """Parse CORS_ORIGINS from various formats"""
+        if isinstance(v, list):
+            return v
+        if isinstance(v, str):
+            v = v.strip()
+            # Try JSON format
+            if v.startswith('['):
+                try:
+                    return json.loads(v)
+                except json.JSONDecodeError:
+                    pass
+            # Return as-is, will be parsed in get_cors_origins()
+            return v
+        return v
 
     class Config:
         env_file = ".env"
@@ -45,7 +64,7 @@ class Settings(BaseSettings):
 
     def get_cors_origins(self) -> List[str]:
         """
-        Parse CORS_ORIGINS from environment variable
+        Get CORS origins as a list
 
         Supports multiple formats:
         1. JSON array: ["http://localhost:3000","http://example.com"]
@@ -55,14 +74,12 @@ class Settings(BaseSettings):
         if not self.CORS_ORIGINS:
             return ["http://localhost:3000"]
 
-        origins_str = self.CORS_ORIGINS.strip()
+        # Already parsed as list by validator
+        if isinstance(self.CORS_ORIGINS, list):
+            return self.CORS_ORIGINS
 
-        # Try JSON format
-        if origins_str.startswith('['):
-            try:
-                return json.loads(origins_str)
-            except json.JSONDecodeError:
-                pass
+        # Parse string format
+        origins_str = str(self.CORS_ORIGINS).strip()
 
         # Try comma-separated
         if ',' in origins_str:
