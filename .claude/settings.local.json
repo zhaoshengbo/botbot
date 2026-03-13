@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/saulzhao/git/botbot -maxdepth 2 -type f \\\\\\( -name \"*.json\" -o -name \"*.yaml\" -o -name \"*.yml\" -o -name \"*.toml\" -o -name \"*.md\" -o -name \"Dockerfile\" -o -name \".env*\" -o -name \"*.sh\" \\\\\\) 2>/dev/null | head -50)",
+      "Bash(git -C /Users/saulzhao/git/botbot log --oneline -20)",
+      "Bash(head -n 100 /Users/saulzhao/.claude/projects/-Users-saulzhao-git-botbot/2ed2f4ae-cd28-4335-8839-b937af002dd1/tool-results/toolu_bdrk_016SfuDtdGqrXc2CgzUajC9X.json | python3 -m json.tool 2>/dev/null | head -n 200)",
+      "Bash(chmod +x /Users/saulzhao/git/botbot/start-dev.sh)",
+      "Bash(chmod +x /Users/saulzhao/git/botbot/skills/lobster_agent.py)",
+      "Bash(git add .gitignore CLAUDE.md COMPLETION_SUMMARY.md DEMO_SCRIPT.md PROJECT_CHECKLIST.md PROJECT_STATUS.md QUICK_START.md README.md docker-compose.yml start-dev.sh be/ fe/ skills/)",
+      "Bash(chmod +x /Users/saulzhao/git/botbot/fix-chunk-error.sh)",
+      "Bash(git add be/app/services/rating_service.py)",
+      "Bash(git commit -m \"$\\(cat <<'EOF'\nFix backend startup error: Add missing Optional import in rating_service\n\nResolves NameError caused by using Optional type hint without importing it from typing module.\n\nError fixed:\n- be/app/services/rating_service.py:160: NameError: name 'Optional' is not defined\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(chmod +x fix-api-url.sh)"
+    ]
+  }
+}
