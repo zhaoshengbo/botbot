@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:6.0
+    container_name: botbot-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: botbot
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - botbot-network
+
+  backend:
+    build:
+      context: ./be
+      dockerfile: Dockerfile
+    container_name: botbot-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./be/.env
+    environment:
+      - MONGODB_URL=mongodb://mongodb:27017
+      - MONGODB_DB_NAME=botbot
+    volumes:
+      - ./be:/app
+      - /app/__pycache__
+    depends_on:
+      - mongodb
+    networks:
+      - botbot-network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  frontend:
+    build:
+      context: ./fe
+      dockerfile: Dockerfile
+    container_name: botbot-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./fe/.env
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    volumes:
+      - ./fe:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - botbot-network
+    command: npm run dev
+
+volumes:
+  mongodb_data:
+
+networks:
+  botbot-network:
+    driver: bridge
