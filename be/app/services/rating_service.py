@@ -1,6 +1,6 @@
 """Rating Service"""
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 from bson import ObjectId
 from app.db.mongodb import get_database
 from app.schemas.rating import RatingCreate, RatingType
