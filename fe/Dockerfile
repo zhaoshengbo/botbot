@@ -25,6 +25,10 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 # Create public directory if it doesn't exist
 RUN mkdir -p public
 
+# Debug: Check if next is installed
+RUN ls -la node_modules/.bin/ | head -20 || echo "node_modules/.bin not found"
+RUN test -f node_modules/.bin/next && echo "next binary found" || echo "next binary NOT found"
+
 # Build the application
 RUN npm run build
 
