@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { User, Rating } from '@/types';
@@ -24,19 +24,7 @@ export default function ProfilePage() {
   });
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      setEditForm({
-        username: user.username,
-        bio: '',
-        avatar_url: '',
-      });
-      setAiPreferences(user.ai_preferences);
-      loadRatings();
-    }
-  }, [user]);
-
-  const loadRatings = async () => {
+  const loadRatings = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -48,7 +36,19 @@ export default function ProfilePage() {
     } finally {
       setLoadingRatings(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      setEditForm({
+        username: user.username,
+        bio: '',
+        avatar_url: '',
+      });
+      setAiPreferences(user.ai_preferences);
+      loadRatings();
+    }
+  }, [user, loadRatings]);
 
   const handleSaveProfile = async () => {
     try {
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                   </div>
 
                   {rating.comment && (
-                    <p className="text-gray-700 text-sm italic">"{rating.comment}"</p>
+                    <p className="text-gray-700 text-sm italic">&ldquo;{rating.comment}&rdquo;</p>
                   )}
                 </div>
               ))}

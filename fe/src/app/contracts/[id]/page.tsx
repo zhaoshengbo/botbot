@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -22,13 +22,7 @@ export default function ContractDetailPage() {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadContract();
-    }
-  }, [user, contractId]);
-
-  const loadContract = async () => {
+  const loadContract = useCallback(async () => {
     try {
       setLoading(true);
       const contractData = await apiClient.getContract(contractId);
@@ -41,7 +35,13 @@ export default function ContractDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [contractId, router]);
+
+  useEffect(() => {
+    if (user) {
+      loadContract();
+    }
+  }, [user, loadContract]);
 
   const handleSubmitDeliverables = async (e: React.FormEvent) => {
     e.preventDefault();

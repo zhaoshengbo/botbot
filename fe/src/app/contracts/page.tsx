@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { Contract } from '@/types';
@@ -15,13 +15,7 @@ export default function ContractsPage() {
   const [filter, setFilter] = useState<string>('');
   const [roleFilter, setRoleFilter] = useState<string>('');
 
-  useEffect(() => {
-    if (user) {
-      loadContracts();
-    }
-  }, [user, filter, roleFilter]);
-
-  const loadContracts = async () => {
+  const loadContracts = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.getContracts({
@@ -34,7 +28,13 @@ export default function ContractsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, roleFilter]);
+
+  useEffect(() => {
+    if (user) {
+      loadContracts();
+    }
+  }, [user, loadContracts]);
 
   if (!user) {
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -22,13 +22,7 @@ export default function Home() {
     }
   }, [authLoading, user, router]);
 
-  useEffect(() => {
-    if (user) {
-      loadTasks();
-    }
-  }, [user, filter]);
-
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiClient.getTasks({
@@ -42,7 +36,13 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter]);
+
+  useEffect(() => {
+    if (user) {
+      loadTasks();
+    }
+  }, [user, loadTasks]);
 
   if (authLoading || !user) {
     return (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
@@ -26,13 +26,7 @@ export default function TaskDetailPage() {
   const [bidMessage, setBidMessage] = useState('');
   const [submittingBid, setSubmittingBid] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadTaskData();
-    }
-  }, [user, taskId]);
-
-  const loadTaskData = async () => {
+  const loadTaskData = useCallback(async () => {
     try {
       setLoading(true);
       const [taskData, bidsData] = await Promise.all([
@@ -49,7 +43,13 @@ export default function TaskDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId, router]);
+
+  useEffect(() => {
+    if (user) {
+      loadTaskData();
+    }
+  }, [user, loadTaskData]);
 
   const handleAnalyzeWithAI = async () => {
     if (!user) return;
