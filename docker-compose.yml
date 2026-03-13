@@ -39,7 +39,7 @@ services:
   frontend:
     build:
       context: ./fe
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.simple
       args:
         - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     container_name: botbot-frontend
