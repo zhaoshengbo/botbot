@@ -29,11 +29,20 @@ services:
     restart: always
     ports:
       - "8000:8000"
-    env_file:
-      - ./be/.env
     environment:
       - MONGODB_URL=mongodb://mongodb:27017
       - MONGODB_DB_NAME=botbot
+      - DEBUG=False
+      - SECRET_KEY=${SECRET_KEY:-prod-secret-key-change-this}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-prod-jwt-secret-key-change-this}
+      - API_PREFIX=/api
+      - CORS_ORIGINS=*
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CLAUDE_MODEL=claude-3-5-sonnet-20241022
+      - ALIYUN_ACCESS_KEY_ID=${ALIYUN_ACCESS_KEY_ID:-}
+      - ALIYUN_ACCESS_KEY_SECRET=${ALIYUN_ACCESS_KEY_SECRET:-}
+      - ALIYUN_SMS_SIGN_NAME=${ALIYUN_SMS_SIGN_NAME:-}
+      - ALIYUN_SMS_TEMPLATE_CODE=${ALIYUN_SMS_TEMPLATE_CODE:-}
     depends_on:
       - mongodb
     networks:

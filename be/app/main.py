@@ -29,12 +29,16 @@ app = FastAPI(
 cors_origins = settings.get_cors_origins()
 print(f"🌐 CORS Origins: {cors_origins}")  # Debug log
 
+# 当允许所有来源时，不能使用 allow_credentials=True
+allow_credentials = "*" not in cors_origins
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 
