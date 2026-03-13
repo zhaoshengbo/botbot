@@ -1,10 +1,13 @@
 version: '3.8'
 
+# Production Docker Compose Configuration
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
 services:
   mongodb:
     image: mongo:6.0
     container_name: botbot-mongodb
-    restart: unless-stopped
+    restart: always
     ports:
       - "27017:27017"
     environment:
@@ -13,13 +16,17 @@ services:
       - mongodb_data:/data/db
     networks:
       - botbot-network
+    # 生产环境建议添加认证
+    # environment:
+    #   MONGO_INITDB_ROOT_USERNAME: admin
+    #   MONGO_INITDB_ROOT_PASSWORD: your-strong-password
 
   backend:
     build:
       context: ./be
       dockerfile: Dockerfile
     container_name: botbot-backend
-    restart: unless-stopped
+    restart: always
     ports:
       - "8000:8000"
     env_file:
@@ -27,37 +34,35 @@ services:
     environment:
       - MONGODB_URL=mongodb://mongodb:27017
       - MONGODB_DB_NAME=botbot
-    volumes:
-      - ./be:/app
-      - /app/__pycache__
     depends_on:
       - mongodb
     networks:
       - botbot-network
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # 生产环境使用生产命令（移除 --reload）
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
   frontend:
     build:
       context: ./fe
       dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
     container_name: botbot-frontend
-    restart: unless-stopped
+    restart: always
     ports:
       - "3000:3000"
     env_file:
-      - ./fe/.env
-    volumes:
-      - ./fe:/app
-      - /app/node_modules
-      - /app/.next
+      - ./fe/.env.production
     depends_on:
       - backend
     networks:
       - botbot-network
-    command: npm run dev
+    # 生产环境先构建再启动
+    command: sh -c "npm run build && npm start"
 
 volumes:
   mongodb_data:
+    driver: local
 
 networks:
   botbot-network:
