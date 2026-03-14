@@ -203,14 +203,18 @@ class APIClient {
     bidData: { amount: number; message?: string },
     useAI: boolean = false
   ): Promise<Bid> {
-    const { data } = await this.client.post(`/bids/${taskId}/bids`, bidData, {
+    const { data } = await this.client.post('/bids/', {
+      task_id: taskId,
+      ...bidData,
+    }, {
       params: { use_ai: useAI },
     });
     return data;
   }
 
   async getTaskBids(taskId: string): Promise<BidListResponse> {
-    const { data } = await this.client.get(`/bids/${taskId}/bids`);
+    const { data } = await this.client.get(`/tasks/${taskId}/bids`);
+    // Backend returns { bids: [], total: number }
     return data;
   }
 
@@ -225,6 +229,11 @@ class APIClient {
   }
 
   // Contract APIs
+  async acceptBid(bidId: string): Promise<{ message: string; contract_id: string; bid_id: string }> {
+    const { data } = await this.client.post(`/bids/${bidId}/accept`);
+    return data;
+  }
+
   async createContract(bidId: string): Promise<Contract> {
     const { data } = await this.client.post('/contracts', { bid_id: bidId });
     return data;
@@ -243,9 +252,10 @@ class APIClient {
     return data;
   }
 
-  async submitDeliverables(contractId: string, deliverablesUrl: string): Promise<Contract> {
-    const { data } = await this.client.post(`/contracts/${contractId}/deliverables`, {
-      deliverables_url: deliverablesUrl,
+  async submitDeliverables(contractId: string, deliverablesUrl: string, notes?: string): Promise<Contract> {
+    const { data } = await this.client.post(`/contracts/${contractId}/submit`, {
+      deliverable_url: deliverablesUrl,
+      notes,
     });
     return data;
   }
