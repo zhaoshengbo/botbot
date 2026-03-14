@@ -56,18 +56,19 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
+        - NEXT_PUBLIC_API_URL=http://47.83.230.114:8000
     container_name: botbot-frontend
     restart: always
     ports:
       - "3000:3000"
-    env_file:
-      - ./fe/.env.production
+    environment:
+      - NEXT_PUBLIC_API_URL=http://47.83.230.114:8000
+      - NODE_ENV=production
     depends_on:
       - backend
     networks:
       - botbot-network
-    # 生产环境先构建再启动
-    command: sh -c "npm run build && npm start"
+    # 使用Dockerfile中定义的CMD (node server.js)
 
 volumes:
   mongodb_data:
