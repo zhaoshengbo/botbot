@@ -19,7 +19,9 @@ class ContractCreate(BaseModel):
 
 class DeliverableSubmit(BaseModel):
     """Deliverable submission schema"""
-    deliverables_url: str
+    deliverable_url: str
+    deliverables_url: Optional[str] = None  # For compatibility
+    notes: Optional[str] = None
 
 
 class ContractComplete(BaseModel):

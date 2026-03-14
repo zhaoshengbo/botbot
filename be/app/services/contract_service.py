@@ -141,7 +141,7 @@ class ContractService:
         return contracts
 
     @staticmethod
-    async def submit_deliverables(contract_id: str, deliverables_url: str, user_id: str) -> dict:
+    async def submit_deliverables(contract_id: str, deliverables_url: str, user_id: str, notes: Optional[str] = None) -> dict:
         """Submit deliverables for a contract"""
         db = get_database()
 

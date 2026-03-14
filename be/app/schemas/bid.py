@@ -36,7 +36,10 @@ class AnalyzeTaskResponse(BaseModel):
 
 class BidCreate(BaseModel):
     """Bid creation schema"""
+    task_id: str
     amount: float = Field(..., gt=0)
+    estimated_hours: Optional[float] = Field(None, gt=0)
+    proposal: Optional[str] = Field(None, max_length=1000)
     message: Optional[str] = Field(None, max_length=500)
 
 
@@ -47,6 +50,8 @@ class BidResponse(BaseModel):
     bidder_id: str
     bidder_username: Optional[str] = None
     amount: float
+    estimated_hours: Optional[float] = None
+    proposal: Optional[str] = None
     message: Optional[str] = None
     ai_analysis: Optional[AIAnalysis] = None
     status: BidStatus

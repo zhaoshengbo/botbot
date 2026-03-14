@@ -45,6 +45,10 @@ class UserResponse(BaseModel):
     id: str = Field(..., alias="_id")
     phone_number: str
     username: str
+    nickname: Optional[str] = None
+    bio: Optional[str] = None
+    avatar_url: Optional[str] = None
+    skills: Optional[list[str]] = None
     phone_verified: bool
     shrimp_food_balance: float
     shrimp_food_frozen: float
@@ -67,6 +71,8 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     """User update schema"""
     username: Optional[str] = None
+    nickname: Optional[str] = None
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+    skills: Optional[list[str]] = None
     ai_preferences: Optional[AIPreferences] = None

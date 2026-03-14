@@ -11,6 +11,66 @@ from app.core.security import get_current_user_id
 router = APIRouter()
 
 
+@router.post("/", response_model=BidResponse, status_code=status.HTTP_201_CREATED)
+async def create_bid_v2(
+    bid_data: BidCreate,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Submit a bid on a task (v2 - cleaner API)"""
+    db = get_database()
+
+    try:
+        bid = await bid_service.create_bid(bid_data.task_id, bid_data, current_user_id, None)
+
+        bid["_id"] = str(bid["_id"])
+        bid["task_id"] = str(bid["task_id"])
+        bid["bidder_id"] = str(bid["bidder_id"])
+
+        # Get bidder username
+        user = await db.users.find_one({"_id": ObjectId(current_user_id)})
+        bid["bidder_username"] = user.get("username") if user else None
+
+        return BidResponse(**bid)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.post("/{bid_id}/accept")
+async def accept_bid(
+    bid_id: str = Path(..., description="Bid ID"),
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """Accept a bid and create a contract"""
+    try:
+        from app.services.contract_service import contract_service
+
+        contract = await contract_service.create_contract(bid_id, current_user_id)
+
+        return {
+            "message": "Bid accepted successfully",
+            "contract_id": str(contract["_id"]),
+            "bid_id": bid_id
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
 @router.post("/{task_id}/bids", response_model=BidResponse, status_code=status.HTTP_201_CREATED)
 async def create_bid(
     task_id: str = Path(..., description="Task ID"),

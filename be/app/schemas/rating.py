@@ -14,7 +14,7 @@ class RatingType(str, Enum):
 class RatingCreate(BaseModel):
     """Rating creation schema"""
     contract_id: str
-    score: int = Field(..., ge=1, le=5)
+    score: Optional[int] = Field(None, ge=1, le=5)  # Auto-calculated from sub-scores if not provided
     quality_score: int = Field(..., ge=1, le=5)
     communication_score: int = Field(..., ge=1, le=5)
     timeliness_score: int = Field(..., ge=1, le=5)

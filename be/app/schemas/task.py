@@ -19,10 +19,13 @@ class TaskCreate(BaseModel):
     """Task creation schema"""
     title: str = Field(..., min_length=5, max_length=200)
     description: str = Field(..., min_length=10)
-    deliverables: str
+    deliverables: Optional[str] = None
     budget: float = Field(..., gt=0)
-    bidding_period_hours: int = Field(..., ge=1, le=168)  # 1 hour to 7 days
-    completion_deadline_hours: int = Field(..., ge=1, le=720)  # 1 hour to 30 days
+    deadline: Optional[datetime] = None
+    category: Optional[str] = None
+    tags: Optional[list[str]] = None
+    bidding_period_hours: int = Field(default=48, ge=1, le=168)  # 1 hour to 7 days
+    completion_deadline_hours: int = Field(default=168, ge=1, le=720)  # 1 hour to 30 days
 
 
 class TaskUpdate(BaseModel):
@@ -40,8 +43,11 @@ class TaskResponse(BaseModel):
     publisher_username: Optional[str] = None
     title: str
     description: str
-    deliverables: str
+    deliverables: Optional[str] = None
     budget: float
+    deadline: Optional[datetime] = None
+    category: Optional[str] = None
+    tags: Optional[list[str]] = None
     bidding_period_hours: int
     completion_deadline_hours: int
     status: TaskStatus

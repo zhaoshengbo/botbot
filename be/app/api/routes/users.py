@@ -54,14 +54,20 @@ async def update_current_user(
         {"$set": update_dict}
     )
 
-    if result.modified_count == 0:
+    if result.matched_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found or no changes made"
+            detail="User not found"
         )
 
     # Return updated user
     user = await db.users.find_one({"_id": ObjectId(current_user_id)})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
     user["_id"] = str(user["_id"])
     return UserResponse(**user)
 
@@ -86,4 +92,40 @@ async def get_balance(current_user_id: str = Depends(get_current_user_id)):
         "balance": user.get("shrimp_food_balance", 0),
         "frozen": user.get("shrimp_food_frozen", 0),
         "available": user.get("shrimp_food_balance", 0) - user.get("shrimp_food_frozen", 0)
+    }
+
+
+@router.get("/me/ratings", response_model=dict)
+async def get_my_ratings(current_user_id: str = Depends(get_current_user_id)):
+    """Get current user's ratings"""
+    db = get_database()
+
+    # Get ratings received (as ratee)
+    received_ratings = await db.ratings.find(
+        {"ratee_id": ObjectId(current_user_id)}
+    ).sort("created_at", -1).to_list(length=100)
+
+    # Get ratings given (as rater)
+    given_ratings = await db.ratings.find(
+        {"rater_id": ObjectId(current_user_id)}
+    ).sort("created_at", -1).to_list(length=100)
+
+    # Convert ObjectIds
+    for rating in received_ratings + given_ratings:
+        if "_id" in rating:
+            rating["_id"] = str(rating["_id"])
+        if "contract_id" in rating:
+            rating["contract_id"] = str(rating["contract_id"])
+        if "task_id" in rating:
+            rating["task_id"] = str(rating["task_id"])
+        if "rater_id" in rating:
+            rating["rater_id"] = str(rating["rater_id"])
+        if "ratee_id" in rating:
+            rating["ratee_id"] = str(rating["ratee_id"])
+
+    return {
+        "received_ratings": received_ratings,
+        "given_ratings": given_ratings,
+        "total_received": len(received_ratings),
+        "total_given": len(given_ratings)
     }

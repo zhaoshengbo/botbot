@@ -114,6 +114,7 @@ async def get_contract(
     return ContractResponse(**contract)
 
 
+@router.post("/{contract_id}/submit", response_model=ContractResponse)
 @router.post("/{contract_id}/deliverables", response_model=ContractResponse)
 async def submit_deliverables(
     contract_id: str,
@@ -122,10 +123,12 @@ async def submit_deliverables(
 ):
     """Submit deliverables for a contract"""
     try:
+        url = deliverable_data.deliverable_url or deliverable_data.deliverables_url
         contract = await contract_service.submit_deliverables(
             contract_id,
-            deliverable_data.deliverables_url,
-            current_user_id
+            url,
+            current_user_id,
+            notes=deliverable_data.notes
         )
 
         # Enrich

@@ -159,6 +159,41 @@ async def cancel_task(
         )
 
 
+@router.get("/{task_id}/bids")
+async def get_task_bids(task_id: str):
+    """Get all bids for a task"""
+    from app.services.bid_service import bid_service
+
+    try:
+        bids = await bid_service.get_task_bids(task_id)
+
+        # Convert ObjectIds
+        db = get_database()
+        for bid in bids:
+            bid["_id"] = str(bid["_id"])
+            bid["task_id"] = str(bid["task_id"])
+            bid["bidder_id"] = str(bid["bidder_id"])
+
+            # Get bidder username
+            user = await db.users.find_one({"_id": ObjectId(bid["bidder_id"])})
+            bid["bidder_username"] = user.get("username") if user else None
+
+        return {
+            "bids": bids,
+            "total": len(bids)
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
 @router.get("/my/tasks", response_model=TaskListResponse)
 async def get_my_tasks(
     status: Optional[str] = Query(None, description="Filter by status"),

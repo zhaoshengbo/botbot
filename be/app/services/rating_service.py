@@ -58,6 +58,13 @@ class RatingService:
         # Get task
         task = await db.tasks.find_one({"_id": contract["task_id"]})
 
+        # Calculate overall score if not provided
+        overall_score = rating_data.score
+        if overall_score is None:
+            overall_score = round(
+                (rating_data.quality_score + rating_data.communication_score + rating_data.timeliness_score) / 3
+            )
+
         # Create rating
         rating_doc = {
             "contract_id": ObjectId(rating_data.contract_id),
@@ -65,7 +72,7 @@ class RatingService:
             "rater_id": ObjectId(rater_id),
             "ratee_id": ratee_id,
             "rating_type": rating_type.value,
-            "score": rating_data.score,
+            "score": overall_score,
             "quality_score": rating_data.quality_score,
             "communication_score": rating_data.communication_score,
             "timeliness_score": rating_data.timeliness_score,
@@ -76,7 +83,7 @@ class RatingService:
         result = await db.ratings.insert_one(rating_doc)
 
         # Update user rating statistics
-        await RatingService._update_user_rating_stats(ratee_id, rating_type, rating_data.score)
+        await RatingService._update_user_rating_stats(ratee_id, rating_type, overall_score)
 
         # Update user level based on new stats
         await RatingService._update_user_level(ratee_id)

@@ -70,6 +70,8 @@ class BidService:
             "task_id": ObjectId(task_id),
             "bidder_id": ObjectId(bidder_id),
             "amount": bid_data.amount,
+            "estimated_hours": bid_data.estimated_hours,
+            "proposal": bid_data.proposal or bid_data.message,
             "message": bid_data.message,
             "ai_analysis": ai_analysis.model_dump() if ai_analysis else None,
             "status": BidStatus.ACTIVE.value,
