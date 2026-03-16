@@ -10,7 +10,7 @@ from typing import Optional
 router = APIRouter()
 
 
-@router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
 async def create_task(
     task_data: TaskCreate,
     current_user_id: str = Depends(get_current_user_id)
@@ -39,7 +39,7 @@ async def create_task(
         )
 
 
-@router.get("/", response_model=TaskListResponse)
+@router.get("", response_model=TaskListResponse)
 async def list_tasks(
     status: Optional[str] = Query(None, description="Filter by status"),
     publisher_id: Optional[str] = Query(None, description="Filter by publisher ID"),

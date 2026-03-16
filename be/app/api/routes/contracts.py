@@ -16,7 +16,7 @@ from app.core.security import get_current_user_id
 router = APIRouter()
 
 
-@router.post("/", response_model=ContractResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ContractResponse, status_code=status.HTTP_201_CREATED)
 async def create_contract(
     contract_data: ContractCreate,
     current_user_id: str = Depends(get_current_user_id)
@@ -53,7 +53,7 @@ async def create_contract(
         )
 
 
-@router.get("/", response_model=ContractListResponse)
+@router.get("", response_model=ContractListResponse)
 async def list_contracts(
     role: Optional[str] = Query(None, description="Filter by role: publisher or claimer"),
     status: Optional[str] = Query(None, description="Filter by status"),

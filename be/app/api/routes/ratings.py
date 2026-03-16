@@ -10,7 +10,7 @@ from app.core.security import get_current_user_id
 router = APIRouter()
 
 
-@router.post("/", response_model=RatingResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=RatingResponse, status_code=status.HTTP_201_CREATED)
 async def create_rating(
     rating_data: RatingCreate,
     current_user_id: str = Depends(get_current_user_id)

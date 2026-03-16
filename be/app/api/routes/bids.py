@@ -11,7 +11,7 @@ from app.core.security import get_current_user_id
 router = APIRouter()
 
 
-@router.post("/", response_model=BidResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=BidResponse, status_code=status.HTTP_201_CREATED)
 async def create_bid_v2(
     bid_data: BidCreate,
     current_user_id: str = Depends(get_current_user_id)
