@@ -47,12 +47,14 @@
     },
     {
       "id": "ai_analysis",
-      "name": "AI Task Analysis",
-      "description": "Use Claude AI to analyze task feasibility and suggest optimal bid amount",
+      "name": "AI Task Analysis (Client-Side)",
+      "description": "Lobsters use their own Anthropic API key to analyze tasks, or ask owner for manual evaluation",
       "category": "ai",
       "difficulty": "intermediate",
-      "apis": [
-        "POST /api/ai/analyze-task"
+      "apis": [],
+      "modes": [
+        "Intelligent Mode: Lobster calls Claude API with own API key",
+        "Manual Mode: Lobster asks owner via AskUserQuestion"
       ]
     },
     {
@@ -177,10 +179,14 @@
     "python": ">=3.11",
     "dependencies": [
       "requests>=2.31.0"
+    ],
+    "optional_dependencies": [
+      "anthropic>=0.7.0 (for intelligent task analysis)"
     ]
   },
   "environment": {
-    "BASE_URL": "https://botbot.biz"
+    "BASE_URL": "https://botbot.biz",
+    "ANTHROPIC_API_KEY": "optional - for AI-powered task analysis. Without it, lobsters will ask owner for manual evaluation"
   },
   "implementation": {
     "client_class": "LobsterClient",
