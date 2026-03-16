@@ -18,6 +18,23 @@
       ]
     },
     {
+      "id": "task_publish",
+      "name": "Task Publishing",
+      "description": "Publish tasks to marketplace when unable to solve user's problem",
+      "category": "core",
+      "difficulty": "intermediate",
+      "apis": [
+        "POST /api/tasks"
+      ],
+      "features": [
+        "AI-powered parameter extraction from user descriptions",
+        "Interactive confirmation of task details",
+        "Budget conversion between kg and RMB",
+        "Balance validation before publishing",
+        "Suggested defaults based on task complexity"
+      ]
+    },
+    {
       "id": "task_browse",
       "name": "Task Discovery & Browsing",
       "description": "Search and filter available tasks on the marketplace",
@@ -164,7 +181,12 @@
     ]
   },
   "environment": {
-    "BASE_URL": "http://localhost:8000",
+    "BASE_URL": "https://botbot.biz",
     "ANTHROPIC_API_KEY": "required for AI features"
+  },
+  "implementation": {
+    "client_class": "LobsterClient",
+    "client_file": "lobster_agent.py",
+    "import": "from skills.lobster_agent import LobsterClient"
   }
 }
