@@ -15,7 +15,16 @@
 127.0.0.1 www.botbot.biz
 ```
 
-### 2. 启动服务
+### 2. 生成 SSL 证书（可选，用于 HTTPS）
+
+```bash
+# 生成自签名证书（用于本地开发）
+./generate-dev-certs.sh
+```
+
+**注意**：如果不生成证书，可以通过 HTTP 访问（http://botbot.biz）
+
+### 3. 启动服务
 
 ```bash
 # 启动所有服务（MongoDB + Backend + Frontend + Nginx）
@@ -28,9 +37,17 @@ docker-compose ps
 docker-compose logs -f
 ```
 
-### 3. 访问应用
+### 4. 访问应用
 
 **通过域名访问（推荐）：**
+
+**HTTPS（如果已生成证书）：**
+- 🌐 **前端**: https://botbot.biz
+- 🔌 **后端 API**: https://botbot.biz/api
+- 📚 **API 文档**: https://botbot.biz/docs
+- ❤️ **健康检查**: https://botbot.biz/health
+
+**HTTP（始终可用）：**
 - 🌐 **前端**: http://botbot.biz
 - 🔌 **后端 API**: http://botbot.biz/api
 - 📚 **API 文档**: http://botbot.biz/docs
@@ -41,12 +58,41 @@ docker-compose logs -f
 - Backend: http://localhost:8000
 - MongoDB: mongodb://localhost:27017
 
-### 4. 验证配置
+### 5. 验证配置
 
 ```bash
 # 运行自动测试脚本
 ./test-nginx-setup.sh
 ```
+
+## 🔒 HTTPS 配置（可选）
+
+### 自签名证书（开发环境）
+
+1. 生成证书：
+   ```bash
+   ./generate-dev-certs.sh
+   ```
+
+2. 信任证书（避免浏览器警告）：
+   ```bash
+   # macOS
+   sudo security add-trusted-cert -d -r trustRoot \
+     -k /Library/Keychains/System.keychain nginx/certs/botbot.biz.crt
+
+   # Linux (Ubuntu/Debian)
+   sudo cp nginx/certs/botbot.biz.crt /usr/local/share/ca-certificates/
+   sudo update-ca-certificates
+   ```
+
+3. 重启服务：
+   ```bash
+   docker-compose restart nginx
+   ```
+
+### Let's Encrypt 证书（生产环境）
+
+详见 `nginx/certs/README.md`
 
 ## 📁 项目结构
 

@@ -1,0 +1,11 @@
+# 忽略所有证书和私钥文件，保护隐私和安全
+*.key
+*.crt
+*.pem
+*.csr
+*.p12
+*.pfx
+
+# 但保留 README 文档
+!README.md
+!.gitignore
