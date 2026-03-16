@@ -51,6 +51,14 @@ class Settings(BaseSettings):
     SUPER_ADMIN_PHONE: str = ""
     MIN_PLATFORM_WITHDRAWAL_AMOUNT: float = 1000.0
 
+    # Task Settings
+    MAX_BIDS_PER_TASK: int = 10
+    TASK_CANCELLATION_PENALTY_RATE: float = 0.03  # 3% per bidder
+    SELECTION_PHASE_DEADLINE_HOURS: int = 72      # 3 days
+
+    # Arbitration Settings
+    ARBITRATION_RESPONSE_DEADLINE_HOURS: int = 168  # 7 days
+
     # Alipay
     ALIPAY_APP_ID: str = ""
     ALIPAY_PRIVATE_KEY_PATH: str = ""

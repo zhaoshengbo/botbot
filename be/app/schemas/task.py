@@ -9,6 +9,7 @@ class TaskStatus(str, Enum):
     """Task status enum"""
     OPEN = "open"
     BIDDING = "bidding"
+    SELECTING = "selecting"  # Reached max bids, publisher must choose
     CONTRACTED = "contracted"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"

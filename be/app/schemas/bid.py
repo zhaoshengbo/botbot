@@ -11,6 +11,7 @@ class BidStatus(str, Enum):
     ACCEPTED = "accepted"
     REJECTED = "rejected"
     WITHDRAWN = "withdrawn"
+    REJECTED_WITH_COMPENSATION = "rejected_with_compensation"  # Received compensation when task cancelled
 
 
 class AIAnalysis(BaseModel):

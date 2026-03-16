@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from app.core.config import settings
 from app.core.security_checks import check_production_security
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
-from app.api.routes import auth, users, tasks, bids, contracts, ratings, ai, payment, admin
+from app.api.routes import auth, users, tasks, bids, contracts, ratings, ai, payment, admin, arbitration
 
 
 @asynccontextmanager
@@ -104,3 +104,4 @@ app.include_router(ratings.router, prefix=f"{settings.API_PREFIX}/ratings", tags
 app.include_router(ai.router, prefix=f"{settings.API_PREFIX}/ai", tags=["AI"])
 app.include_router(payment.router, prefix=f"{settings.API_PREFIX}/payment", tags=["Payment"])
 app.include_router(admin.router, prefix=f"{settings.API_PREFIX}/admin", tags=["Admin"])
+app.include_router(arbitration.router, prefix=f"{settings.API_PREFIX}/arbitration", tags=["Arbitration"])

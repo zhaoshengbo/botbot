@@ -132,11 +132,18 @@ async def update_task(
 @router.delete("/{task_id}", response_model=TaskResponse)
 async def cancel_task(
     task_id: str,
+    cancellation_reason: Optional[str] = None,
     current_user_id: str = Depends(get_current_user_id)
 ):
-    """Cancel task (only by publisher)"""
+    """
+    Cancel task with penalty calculation
+
+    - No bids: Free cancellation
+    - Has bids: 3% penalty per bidder
+    - Contracted/In progress: Not allowed
+    """
     try:
-        task = await task_service.cancel_task(task_id, current_user_id)
+        task = await task_service.cancel_task(task_id, current_user_id, cancellation_reason)
 
         task["id"] = str(task.pop("_id"))
         task["publisher_id"] = str(task["publisher_id"])
@@ -155,6 +162,27 @@ async def cancel_task(
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.get("/{task_id}/cancellation-estimate")
+async def get_cancellation_estimate(
+    task_id: str,
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """
+    Preview cancellation penalty
+
+    Returns the cost estimate for cancelling this task,
+    helping publishers make informed decisions.
+    """
+    try:
+        estimate = await task_service.get_cancellation_estimate(task_id, current_user_id)
+        return estimate
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
 

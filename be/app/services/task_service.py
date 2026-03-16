@@ -4,6 +4,7 @@ from typing import Optional, List, Dict
 from bson import ObjectId
 from app.db.mongodb import get_database
 from app.schemas.task import TaskCreate, TaskUpdate, TaskStatus
+from app.schemas.bid import BidStatus
 
 
 class TaskService:
@@ -194,11 +195,17 @@ class TaskService:
         return updated_task
 
     @staticmethod
-    async def cancel_task(task_id: str, user_id: str) -> dict:
-        """Cancel task (only by publisher)"""
+    async def cancel_task(task_id: str, user_id: str, cancellation_reason: Optional[str] = None) -> dict:
+        """
+        Cancel task with penalty calculation
+
+        Scenario 1: No bids - free cancellation
+        Scenario 2: Has bids - 3% penalty per bidder
+        Scenario 3: Contracted/In progress - not allowed, use arbitration
+        """
         db = get_database()
 
-        # Get task
+        # 1. Get task and validate
         task = await db.tasks.find_one({"_id": ObjectId(task_id)})
         if not task:
             raise ValueError("Task not found")
@@ -207,14 +214,53 @@ class TaskService:
         if str(task["publisher_id"]) != user_id:
             raise ValueError("Not authorized to cancel this task")
 
-        # Can only cancel if not yet contracted
-        if task["status"] in [TaskStatus.CONTRACTED.value, TaskStatus.IN_PROGRESS.value, TaskStatus.COMPLETED.value]:
-            raise ValueError("Cannot cancel task in current status")
+        # 2. Check task status - Scenario 3: contracted/in progress not allowed
+        if task["status"] in [
+            TaskStatus.CONTRACTED.value,
+            TaskStatus.IN_PROGRESS.value,
+            TaskStatus.COMPLETED.value
+        ]:
+            raise ValueError("Cannot cancel task in current status. Please submit arbitration if there's a dispute.")
 
-        # Update status
+        # Already cancelled - idempotent
+        if task["status"] == TaskStatus.CANCELLED.value:
+            return task
+
+        # 3. Get active bids
+        active_bids = await db.bids.find({
+            "task_id": ObjectId(task_id),
+            "status": BidStatus.ACTIVE.value
+        }).to_list(None)
+
+        active_bid_count = len(active_bids)
+
+        # 4. Route to appropriate scenario
+        if active_bid_count == 0:
+            # Scenario 1: No bids - free cancellation
+            return await TaskService._cancel_task_without_penalty(
+                db, task_id, user_id, task, cancellation_reason
+            )
+        else:
+            # Scenario 2: Has bids - pay penalty
+            return await TaskService._cancel_task_with_penalty(
+                db, task_id, user_id, task, active_bids, cancellation_reason
+            )
+
+    @staticmethod
+    async def _cancel_task_without_penalty(
+        db, task_id: str, user_id: str, task: dict, reason: Optional[str]
+    ) -> dict:
+        """Scenario 1: No bids - free cancellation"""
+
+        # Update task status
         await db.tasks.update_one(
             {"_id": ObjectId(task_id)},
-            {"$set": {"status": TaskStatus.CANCELLED.value}}
+            {"$set": {
+                "status": TaskStatus.CANCELLED.value,
+                "cancelled_at": datetime.utcnow(),
+                "cancellation_reason": reason,
+                "cancellation_penalty_paid": 0.0
+            }}
         )
 
         # Release frozen funds
@@ -223,15 +269,188 @@ class TaskService:
             {"$inc": {"shrimp_food_frozen": -task["budget"]}}
         )
 
-        # Reject all active bids
-        await db.bids.update_many(
-            {"task_id": ObjectId(task_id), "status": "active"},
-            {"$set": {"status": "rejected"}}
-        )
+        return await db.tasks.find_one({"_id": ObjectId(task_id)})
 
-        # Return updated task
-        updated_task = await db.tasks.find_one({"_id": ObjectId(task_id)})
-        return updated_task
+    @staticmethod
+    async def _cancel_task_with_penalty(
+        db, task_id: str, user_id: str, task: dict,
+        active_bids: list, reason: Optional[str]
+    ) -> dict:
+        """
+        Scenario 2: Has bids - pay cancellation penalty
+
+        Penalty: 3% of budget per bidder
+        Total penalty = budget × 0.03 × active_bid_count
+        """
+        from app.core.config import settings
+
+        budget = task["budget"]
+        penalty_rate = settings.TASK_CANCELLATION_PENALTY_RATE
+        active_bid_count = len(active_bids)
+
+        # Calculate penalty
+        penalty_per_bidder = budget * penalty_rate
+        total_penalty = penalty_per_bidder * active_bid_count
+
+        # Verify publisher has sufficient balance
+        publisher = await db.users.find_one({"_id": ObjectId(user_id)})
+        if publisher["shrimp_food_balance"] < total_penalty:
+            raise ValueError("Insufficient balance to pay cancellation penalty")
+
+        # Use transaction for atomicity
+        async with await db.client.start_session() as session:
+            async with session.start_transaction():
+                try:
+                    # 1. Update task status
+                    await db.tasks.update_one(
+                        {"_id": ObjectId(task_id)},
+                        {"$set": {
+                            "status": TaskStatus.CANCELLED.value,
+                            "cancelled_at": datetime.utcnow(),
+                            "cancellation_reason": reason,
+                            "cancellation_penalty_paid": total_penalty
+                        }},
+                        session=session
+                    )
+
+                    # 2. Publisher pays penalty
+                    await db.users.update_one(
+                        {"_id": ObjectId(user_id)},
+                        {"$inc": {
+                            "shrimp_food_balance": -total_penalty,
+                            "shrimp_food_frozen": -budget  # Unfreeze budget
+                        }},
+                        session=session
+                    )
+
+                    # 3. Distribute penalty to bidders
+                    for bid in active_bids:
+                        bidder_id = bid["bidder_id"]
+
+                        # Bidder receives compensation
+                        await db.users.update_one(
+                            {"_id": bidder_id},
+                            {"$inc": {"shrimp_food_balance": penalty_per_bidder}},
+                            session=session
+                        )
+
+                        # Update bid status
+                        await db.bids.update_one(
+                            {"_id": bid["_id"]},
+                            {"$set": {
+                                "status": BidStatus.REJECTED_WITH_COMPENSATION.value,
+                                "compensation_amount": penalty_per_bidder,
+                                "compensated_at": datetime.utcnow()
+                            }},
+                            session=session
+                        )
+
+                        # Get bidder info for transaction log
+                        bidder = await db.users.find_one({"_id": bidder_id}, session=session)
+
+                        # Record transaction log - bidder income
+                        await db.transaction_logs.insert_one({
+                            "transaction_type": "cancellation_compensation",
+                            "user_id": bidder_id,
+                            "amount": penalty_per_bidder,
+                            "balance_before": bidder["shrimp_food_balance"] - penalty_per_bidder,
+                            "balance_after": bidder["shrimp_food_balance"],
+                            "related_order_id": ObjectId(task_id),
+                            "related_order_type": "task",
+                            "description": f"Task cancellation compensation: {task.get('title', 'N/A')}",
+                            "created_at": datetime.utcnow()
+                        }, session=session)
+
+                    # 4. Record transaction log - publisher expense
+                    await db.transaction_logs.insert_one({
+                        "transaction_type": "task_cancellation_penalty",
+                        "user_id": ObjectId(user_id),
+                        "amount": -total_penalty,
+                        "balance_before": publisher["shrimp_food_balance"],
+                        "balance_after": publisher["shrimp_food_balance"] - total_penalty,
+                        "related_order_id": ObjectId(task_id),
+                        "related_order_type": "task",
+                        "description": f"Task cancellation penalty: {task.get('title', 'N/A')} ({active_bid_count} bidders × {penalty_per_bidder}kg)",
+                        "created_at": datetime.utcnow()
+                    }, session=session)
+
+                    await session.commit_transaction()
+
+                except Exception as e:
+                    await session.abort_transaction()
+                    raise ValueError(f"Failed to process cancellation penalty: {str(e)}")
+
+        return await db.tasks.find_one({"_id": ObjectId(task_id)})
+
+    @staticmethod
+    async def get_cancellation_estimate(task_id: str, user_id: str) -> dict:
+        """
+        Preview cancellation penalty
+
+        Returns:
+        {
+            "can_cancel": bool,
+            "reason": str,
+            "active_bid_count": int,
+            "penalty_per_bidder": float,
+            "total_penalty": float,
+            "remaining_balance_after_cancel": float
+        }
+        """
+        from app.core.config import settings
+        db = get_database()
+
+        task = await db.tasks.find_one({"_id": ObjectId(task_id)})
+        if not task:
+            raise ValueError("Task not found")
+
+        # Check ownership
+        if str(task["publisher_id"]) != user_id:
+            raise ValueError("Not authorized")
+
+        # Check if can cancel
+        if task["status"] in [TaskStatus.CONTRACTED.value, TaskStatus.IN_PROGRESS.value]:
+            return {
+                "can_cancel": False,
+                "reason": "Task is contracted or in progress",
+                "active_bid_count": 0,
+                "penalty_per_bidder": 0,
+                "total_penalty": 0,
+                "remaining_balance_after_cancel": 0
+            }
+
+        if task["status"] == TaskStatus.CANCELLED.value:
+            return {
+                "can_cancel": False,
+                "reason": "Task already cancelled",
+                "active_bid_count": 0,
+                "penalty_per_bidder": 0,
+                "total_penalty": 0,
+                "remaining_balance_after_cancel": 0
+            }
+
+        # Count active bids
+        active_bid_count = await db.bids.count_documents({
+            "task_id": ObjectId(task_id),
+            "status": BidStatus.ACTIVE.value
+        })
+
+        # Calculate penalty
+        penalty_per_bidder = task["budget"] * settings.TASK_CANCELLATION_PENALTY_RATE
+        total_penalty = penalty_per_bidder * active_bid_count
+
+        # Get user balance
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        remaining_balance = user["shrimp_food_balance"] - total_penalty
+
+        return {
+            "can_cancel": True,
+            "reason": "Free cancellation" if active_bid_count == 0 else f"Penalty required: {total_penalty}kg",
+            "active_bid_count": active_bid_count,
+            "penalty_per_bidder": penalty_per_bidder,
+            "total_penalty": total_penalty,
+            "remaining_balance_after_cancel": remaining_balance
+        }
 
 
 task_service = TaskService()

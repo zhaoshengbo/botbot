@@ -41,8 +41,12 @@ class BidService:
             raise ValueError("Task not found")
 
         # Check task status
-        if task["status"] != TaskStatus.BIDDING.value:
+        if task["status"] not in [TaskStatus.BIDDING.value, TaskStatus.OPEN.value]:
             raise ValueError("Task is not accepting bids")
+
+        # Check if task is in SELECTING status (reached max bids)
+        if task["status"] == TaskStatus.SELECTING.value:
+            raise ValueError("Task has reached maximum bids and is in selection phase")
 
         # Check bidding period
         if task.get("bidding_ends_at") and datetime.utcnow() > task["bidding_ends_at"]:
@@ -55,6 +59,14 @@ class BidService:
         # Check if bid amount exceeds budget
         if bid_data.amount > task["budget"]:
             raise ValueError("Bid amount exceeds task budget")
+
+        # Check bid limit
+        from app.core.config import settings
+        max_bids = task.get("max_bids", settings.MAX_BIDS_PER_TASK)
+        current_bid_count = task.get("bid_count", 0)
+
+        if current_bid_count >= max_bids:
+            raise ValueError(f"Task has reached maximum bid limit ({max_bids} bids)")
 
         # Check if already bid
         existing_bid = await db.bids.find_one({
@@ -85,6 +97,22 @@ class BidService:
             {"_id": ObjectId(task_id)},
             {"$inc": {"bid_count": 1}}
         )
+
+        # Check if reached max bids, auto-transition to SELECTING status
+        from app.core.config import settings
+        from datetime import timedelta
+        updated_task = await db.tasks.find_one({"_id": ObjectId(task_id)})
+        max_bids = updated_task.get("max_bids", settings.MAX_BIDS_PER_TASK)
+
+        if updated_task["bid_count"] >= max_bids:
+            # Transition to SELECTING status
+            await db.tasks.update_one(
+                {"_id": ObjectId(task_id)},
+                {"$set": {
+                    "status": TaskStatus.SELECTING.value,
+                    "selection_deadline": datetime.utcnow() + timedelta(hours=settings.SELECTION_PHASE_DEADLINE_HOURS)
+                }}
+            )
 
         bid_doc["_id"] = result.inserted_id
         return bid_doc

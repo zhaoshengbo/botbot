@@ -1,5 +1,5 @@
 """Admin API Routes"""
-from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi import APIRouter, HTTPException, Depends, Request, Query
 from typing import List, Optional
 from datetime import datetime
 from bson import ObjectId
@@ -10,7 +10,13 @@ from app.schemas.payment import (
     PlatformWithdrawalResponse,
     PlatformWithdrawalReview
 )
+from app.schemas.arbitration import (
+    ArbitrationDecision,
+    ArbitrationResponse,
+    ArbitrationListResponse
+)
 from app.services.payment_service import payment_service
+from app.services.arbitration_service import arbitration_service
 from app.core.security import get_current_admin_id
 from app.db.mongodb import get_database
 
@@ -331,3 +337,140 @@ async def complete_platform_withdrawal(
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to complete platform withdrawal: {str(e)}")
+
+
+# ========== Arbitration Management Endpoints ==========
+
+@router.get("/arbitration/pending", response_model=ArbitrationListResponse)
+async def get_pending_arbitrations(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    admin_id: str = Depends(get_current_admin_id)
+):
+    """
+    Get pending arbitrations (admin only)
+
+    Returns list of arbitrations awaiting admin review.
+    """
+    try:
+        skip = (page - 1) * page_size
+        arbitrations, total = await arbitration_service.get_pending_arbitrations(skip, page_size)
+
+        # Convert ObjectIds
+        db = get_database()
+        arbitration_responses = []
+        for arb in arbitrations:
+            arb["id"] = str(arb.pop("_id"))
+            arb["contract_id"] = str(arb["contract_id"])
+            arb["task_id"] = str(arb["task_id"])
+            arb["publisher_id"] = str(arb["publisher_id"])
+            arb["claimer_id"] = str(arb["claimer_id"])
+            arb["requester_id"] = str(arb["requester_id"])
+            if arb.get("assigned_admin_id"):
+                arb["assigned_admin_id"] = str(arb["assigned_admin_id"])
+
+            arbitration_responses.append(ArbitrationResponse(**arb))
+
+        return ArbitrationListResponse(
+            arbitrations=arbitration_responses,
+            total=total,
+            page=page,
+            page_size=page_size
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to get pending arbitrations: {str(e)}"
+        )
+
+
+@router.post("/arbitration/{arbitration_id}/assign")
+async def assign_arbitration_to_self(
+    arbitration_id: str,
+    admin_id: str = Depends(get_current_admin_id)
+):
+    """
+    Claim arbitration case (admin only)
+
+    Admin assigns themselves to review the arbitration case.
+    """
+    try:
+        arbitration = await arbitration_service.assign_arbitration(
+            arbitration_id,
+            admin_id
+        )
+
+        # Convert ObjectIds
+        arbitration["id"] = str(arbitration.pop("_id"))
+        arbitration["contract_id"] = str(arbitration["contract_id"])
+        arbitration["task_id"] = str(arbitration["task_id"])
+        arbitration["publisher_id"] = str(arbitration["publisher_id"])
+        arbitration["claimer_id"] = str(arbitration["claimer_id"])
+        arbitration["requester_id"] = str(arbitration["requester_id"])
+        if arbitration.get("assigned_admin_id"):
+            arbitration["assigned_admin_id"] = str(arbitration["assigned_admin_id"])
+
+        return {
+            "success": True,
+            "message": "Arbitration assigned successfully",
+            "arbitration": ArbitrationResponse(**arbitration)
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to assign arbitration: {str(e)}"
+        )
+
+
+@router.post("/arbitration/{arbitration_id}/resolve")
+async def resolve_arbitration_case(
+    arbitration_id: str,
+    decision: ArbitrationDecision,
+    admin_id: str = Depends(get_current_admin_id)
+):
+    """
+    Make arbitration decision (admin only)
+
+    Admin decides how to split payment between publisher and claimer.
+    Percentages must sum to 100%.
+    """
+    try:
+        # Ensure arbitration_id matches
+        if decision.arbitration_id != arbitration_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Arbitration ID mismatch"
+            )
+
+        result = await arbitration_service.resolve_arbitration(
+            decision,
+            admin_id
+        )
+
+        # Convert ObjectIds
+        result["id"] = str(result.pop("_id"))
+        result["contract_id"] = str(result["contract_id"])
+        result["task_id"] = str(result["task_id"])
+        result["publisher_id"] = str(result["publisher_id"])
+        result["claimer_id"] = str(result["claimer_id"])
+        result["requester_id"] = str(result["requester_id"])
+        if result.get("assigned_admin_id"):
+            result["assigned_admin_id"] = str(result["assigned_admin_id"])
+
+        return {
+            "success": True,
+            "message": "Arbitration resolved successfully",
+            "arbitration": ArbitrationResponse(**result)
+        }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to resolve arbitration: {str(e)}"
+        )
