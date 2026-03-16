@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { Task, Bid, AnalyzeTaskResponse } from '@/types';
+import { TaskStatus } from '@/types';
 import Navbar from '@/components/Navbar';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
@@ -199,7 +200,7 @@ export default function TaskDetailPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Task Not Found</h2>
-            <p className="text-gray-600 mb-6">The task you're looking for doesn't exist or has been removed.</p>
+            <p className="text-gray-600 mb-6">The task you&apos;re looking for doesn&apos;t exist or has been removed.</p>
             <button
               onClick={() => router.push('/')}
               className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 font-medium"
@@ -214,7 +215,7 @@ export default function TaskDetailPage() {
 
   const isPublisher = user?.id === task.publisher_id;
   const hasUserBid = bids.some(bid => bid.bidder_id === user?.id);
-  const canBid = task.status === 'bidding' && !isPublisher && !hasUserBid;
+  const canBid = task.status === TaskStatus.Bidding && !isPublisher && !hasUserBid;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -245,9 +246,9 @@ export default function TaskDetailPage() {
               </p>
             </div>
             <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-              task.status === 'bidding' ? 'bg-green-100 text-green-800' :
-              task.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
-              task.status === 'completed' ? 'bg-gray-100 text-gray-800' :
+              task.status === TaskStatus.Bidding || task.status === TaskStatus.Selecting ? 'bg-green-100 text-green-800' :
+              task.status === TaskStatus.InProgress ? 'bg-yellow-100 text-yellow-800' :
+              task.status === TaskStatus.Completed ? 'bg-gray-100 text-gray-800' :
               'bg-red-100 text-red-800'
             }`}>
               {task.status}
@@ -306,7 +307,7 @@ export default function TaskDetailPage() {
             </div>
 
             {/* Cancel Task Button - For Publisher */}
-            {isPublisher && (task.status === 'open' || task.status === 'bidding' || task.status === 'selecting') && (
+            {isPublisher && (task.status === TaskStatus.Open || task.status === TaskStatus.Bidding || task.status === TaskStatus.Selecting) && (
               <button
                 onClick={handleShowCancelDialog}
                 className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 font-medium"
@@ -545,7 +546,7 @@ export default function TaskDetailPage() {
                     </div>
                   )}
 
-                  {isPublisher && bid.status === 'active' && task.status === 'bidding' && (
+                  {isPublisher && bid.status === 'active' && (task.status === TaskStatus.Bidding || task.status === TaskStatus.Selecting) && (
                     <button
                       onClick={() => handleAcceptBid(bid.id)}
                       className="mt-3 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 text-sm font-medium"

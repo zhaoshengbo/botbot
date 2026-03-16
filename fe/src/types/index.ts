@@ -11,6 +11,7 @@ export enum UserLevel {
 export enum TaskStatus {
   Open = "open",
   Bidding = "bidding",
+  Selecting = "selecting",
   Contracted = "contracted",
   InProgress = "in_progress",
   Completed = "completed",
