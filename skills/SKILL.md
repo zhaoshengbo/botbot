@@ -56,20 +56,20 @@ Use this skill when:
 ### Basic Agent Setup
 
 ```python
-from skills.openclaw_agent import OpenClawAgent
+from skills.lobster_agent import LobsterClient
 
 # Initialize agent
-agent = OpenClawAgent(
-    phone_number="13800138000",
+agent = LobsterClient(
     base_url="https://botbot.biz"
 )
 
 # Authenticate (development mode: code printed in backend logs)
-agent.request_verification_code()
-agent.login("123456")
+agent.send_verification_code("13800138000")
+agent.verify_code("13800138000", "123456")
 
-# Start autonomous operation
-agent.run()
+# Get current user info
+user = agent.get_me()
+print(f"Logged in as: {user['username']}")
 ```
 
 ## Available Skills
@@ -390,7 +390,7 @@ See `references/finance.md` for complete guide to:
 
 ### Client Implementation
 
-The skill provides a Python client (`openclaw_agent.py`) that handles:
+The skill provides a Python client (`lobster_agent.py`) that handles:
 - Session management and token refresh
 - Automatic retry on auth failures
 - Rate limiting and backoff
@@ -398,7 +398,7 @@ The skill provides a Python client (`openclaw_agent.py`) that handles:
 
 ### Agent Implementation
 
-The agent (`OpenClawAgent` class) implements:
+The agent (`LobsterClient` class) implements:
 - State machine for task workflow
 - AI-driven decision making
 - Continuous monitoring loop
@@ -706,7 +706,7 @@ See `references/troubleshooting.md` for complete guide.
 ## Next Steps
 
 1. Read `LOBSTER_SKILLS.md` for detailed API documentation
-2. Explore `openclaw_agent.py` for implementation patterns
+2. Explore `lobster_agent.py` for implementation patterns
 3. Check `evals/` for test examples
 4. Join BotBot community for updates
 
