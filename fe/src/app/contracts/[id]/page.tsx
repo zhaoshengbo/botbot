@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { apiClient } from '@/lib/api';
 import type { Contract } from '@/types';
 import Navbar from '@/components/Navbar';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -28,6 +29,11 @@ export default function ContractDetailPage() {
   const [arbitrationReason, setArbitrationReason] = useState('');
   const [evidenceUrls, setEvidenceUrls] = useState('');
   const [submittingArbitration, setSubmittingArbitration] = useState(false);
+
+  // Confirmation dialogs
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const [showRejectConfirm, setShowRejectConfirm] = useState(false);
+  const [showArbitrationConfirm, setShowArbitrationConfirm] = useState(false);
 
   const loadContract = useCallback(async () => {
     try {
@@ -72,14 +78,11 @@ export default function ContractDetailPage() {
   };
 
   const handleApprove = async () => {
-    if (!confirm('Are you sure you want to approve these deliverables? This will complete the contract and transfer the shrimp food.')) {
-      return;
-    }
-
     try {
       setReviewing(true);
       await apiClient.completeContract(contractId, true);
       toast.success('Contract completed! Shrimp food transferred.');
+      setShowApproveConfirm(false);
       setTimeout(() => router.push('/contracts'), 1000);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Failed to complete contract');
@@ -88,30 +91,29 @@ export default function ContractDetailPage() {
     }
   };
 
-  const handleReject = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!rejectionReason.trim()) {
-      toast.error('Please provide a reason for rejection');
-      return;
-    }
-
-    if (!confirm('Are you sure you want to reject these deliverables? This will mark the contract as disputed.')) {
-      return;
-    }
-
+  const handleReject = async () => {
     try {
       setReviewing(true);
       await apiClient.completeContract(contractId, false, rejectionReason);
       toast.success('Deliverables rejected. Contract marked as disputed.');
-      loadContract();
+      setShowRejectConfirm(false);
       setShowRejectionForm(false);
       setRejectionReason('');
+      loadContract();
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Failed to reject deliverables');
     } finally {
       setReviewing(false);
     }
+  };
+
+  const handleRejectClick = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rejectionReason.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
+    setShowRejectConfirm(true);
   };
 
   const handleSendEmail = () => {
@@ -153,23 +155,7 @@ export default function ContractDetailPage() {
     }
   };
 
-  const handleSubmitArbitration = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!arbitrationReason.trim()) {
-      toast.error('Please provide a reason for arbitration');
-      return;
-    }
-
-    if (arbitrationReason.length < 10) {
-      toast.error('Reason must be at least 10 characters');
-      return;
-    }
-
-    if (!confirm('Are you sure you want to submit an arbitration request? An admin will review the case.')) {
-      return;
-    }
-
+  const handleSubmitArbitration = async () => {
     try {
       setSubmittingArbitration(true);
 
@@ -186,6 +172,7 @@ export default function ContractDetailPage() {
       });
 
       toast.success('Arbitration request submitted! An admin will review your case.');
+      setShowArbitrationConfirm(false);
       setShowArbitrationDialog(false);
       setArbitrationReason('');
       setEvidenceUrls('');
@@ -195,6 +182,22 @@ export default function ContractDetailPage() {
     } finally {
       setSubmittingArbitration(false);
     }
+  };
+
+  const handleSubmitArbitrationClick = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!arbitrationReason.trim()) {
+      toast.error('Please provide a reason for arbitration');
+      return;
+    }
+
+    if (arbitrationReason.length < 10) {
+      toast.error('Reason must be at least 10 characters');
+      return;
+    }
+
+    setShowArbitrationConfirm(true);
   };
 
   if (loading) {
@@ -353,7 +356,7 @@ export default function ContractDetailPage() {
                   {!showRejectionForm ? (
                     <div className="flex space-x-4">
                       <button
-                        onClick={handleApprove}
+                        onClick={() => setShowApproveConfirm(true)}
                         disabled={reviewing}
                         className="flex-1 bg-green-500 text-white py-3 px-4 rounded-md hover:bg-green-600 font-medium disabled:bg-gray-400"
                       >
@@ -368,7 +371,7 @@ export default function ContractDetailPage() {
                       </button>
                     </div>
                   ) : (
-                    <form onSubmit={handleReject} className="space-y-4">
+                    <form onSubmit={handleRejectClick} className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Reason for Rejection *
@@ -496,7 +499,7 @@ export default function ContractDetailPage() {
                 </p>
               </div>
 
-              <form onSubmit={handleSubmitArbitration}>
+              <form onSubmit={handleSubmitArbitrationClick}>
                 {/* Your Role */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -576,6 +579,42 @@ export default function ContractDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Approve Deliverables Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showApproveConfirm}
+          title="Approve Deliverables?"
+          message={`Are you sure you want to approve these deliverables?\n\nThis will:\n• Complete the contract\n• Transfer ${contract?.amount}kg of shrimp food to ${contract?.claimer_username}\n• Mark the task as completed\n\nThis action cannot be undone.`}
+          confirmText={reviewing ? 'Approving...' : 'Yes, Approve'}
+          cancelText="No, Go Back"
+          type="success"
+          onConfirm={handleApprove}
+          onCancel={() => setShowApproveConfirm(false)}
+        />
+
+        {/* Reject Deliverables Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showRejectConfirm}
+          title="Reject Deliverables?"
+          message={`Are you sure you want to reject these deliverables?\n\nReason: ${rejectionReason}\n\nThis will:\n• Mark the contract as DISPUTED\n• Allow either party to request arbitration\n• Freeze the payment until resolution\n\nConsider carefully before rejecting.`}
+          confirmText={reviewing ? 'Rejecting...' : 'Yes, Reject'}
+          cancelText="No, Go Back"
+          type="danger"
+          onConfirm={handleReject}
+          onCancel={() => setShowRejectConfirm(false)}
+        />
+
+        {/* Submit Arbitration Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showArbitrationConfirm}
+          title="Submit Arbitration Request?"
+          message={`You are about to request arbitration for this contract.\n\nAn admin will:\n• Review the evidence from both parties\n• Make a fair decision on payment split\n• Execute the payment automatically\n\nThis process may take 1-7 days.\n\nAre you sure you want to proceed?`}
+          confirmText={submittingArbitration ? 'Submitting...' : 'Yes, Submit Request'}
+          cancelText="No, Go Back"
+          type="warning"
+          onConfirm={handleSubmitArbitration}
+          onCancel={() => setShowArbitrationConfirm(false)}
+        />
       </main>
     </div>
   );

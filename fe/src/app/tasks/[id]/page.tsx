@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api';
 import type { Task, Bid, AnalyzeTaskResponse } from '@/types';
 import { TaskStatus } from '@/types';
 import Navbar from '@/components/Navbar';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -33,6 +34,11 @@ export default function TaskDetailPage() {
   const [cancellationEstimate, setCancellationEstimate] = useState<any>(null);
   const [cancellationReason, setCancellationReason] = useState('');
   const [cancellingTask, setCancellingTask] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // Accept bid confirmation
+  const [showAcceptBidConfirm, setShowAcceptBidConfirm] = useState(false);
+  const [bidToAccept, setBidToAccept] = useState<string | null>(null);
 
   const loadTaskData = useCallback(async () => {
     try {
@@ -108,16 +114,23 @@ export default function TaskDetailPage() {
     }
   };
 
-  const handleAcceptBid = async (bidId: string) => {
-    if (!confirm('Are you sure you want to accept this bid?')) return;
+  const handleAcceptBid = async () => {
+    if (!bidToAccept) return;
 
     try {
-      await apiClient.createContract(bidId);
+      await apiClient.createContract(bidToAccept);
       toast.success('Contract created successfully!');
+      setShowAcceptBidConfirm(false);
+      setBidToAccept(null);
       router.push('/contracts');
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Failed to accept bid');
     }
+  };
+
+  const handleAcceptBidClick = (bidId: string) => {
+    setBidToAccept(bidId);
+    setShowAcceptBidConfirm(true);
   };
 
   const handleShowCancelDialog = async () => {
@@ -133,25 +146,22 @@ export default function TaskDetailPage() {
   const handleCancelTask = async () => {
     if (!cancellationEstimate) return;
 
-    if (!confirm(
-      cancellationEstimate.total_penalty > 0
-        ? `This will cost ${cancellationEstimate.total_penalty}kg in penalties. Continue?`
-        : 'Are you sure you want to cancel this task?'
-    )) {
-      return;
-    }
-
     try {
       setCancellingTask(true);
       await apiClient.cancelTask(taskId, cancellationReason || undefined);
       toast.success('Task cancelled successfully!');
       setShowCancelDialog(false);
+      setShowCancelConfirm(false);
       setTimeout(() => router.push('/'), 1000);
     } catch (error: any) {
       toast.error(error.response?.data?.detail || 'Failed to cancel task');
     } finally {
       setCancellingTask(false);
     }
+  };
+
+  const handleCancelTaskClick = () => {
+    setShowCancelConfirm(true);
   };
 
   if (loading) {
@@ -385,11 +395,11 @@ export default function TaskDetailPage() {
                       Go Back
                     </button>
                     <button
-                      onClick={handleCancelTask}
+                      onClick={handleCancelTaskClick}
                       disabled={cancellingTask}
                       className="flex-1 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 disabled:bg-gray-400"
                     >
-                      {cancellingTask ? 'Cancelling...' : 'Confirm Cancel'}
+                      Continue to Cancel
                     </button>
                   </div>
                 </div>
@@ -548,7 +558,7 @@ export default function TaskDetailPage() {
 
                   {isPublisher && bid.status === 'active' && (task.status === TaskStatus.Bidding || task.status === TaskStatus.Selecting) && (
                     <button
-                      onClick={() => handleAcceptBid(bid.id)}
+                      onClick={() => handleAcceptBidClick(bid.id)}
                       className="mt-3 bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 text-sm font-medium"
                     >
                       Accept Bid
@@ -559,6 +569,37 @@ export default function TaskDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Accept Bid Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showAcceptBidConfirm}
+          title="Accept This Bid?"
+          message="Are you sure you want to accept this bid? This will create a contract and the claimer will start working on the task."
+          confirmText="Accept Bid"
+          cancelText="Go Back"
+          type="success"
+          onConfirm={handleAcceptBid}
+          onCancel={() => {
+            setShowAcceptBidConfirm(false);
+            setBidToAccept(null);
+          }}
+        />
+
+        {/* Cancel Task Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showCancelConfirm}
+          title="Cancel This Task?"
+          message={
+            cancellationEstimate?.total_penalty > 0
+              ? `This will cost ${cancellationEstimate.total_penalty.toFixed(1)}kg in penalties (${cancellationEstimate.active_bid_count} bidders × ${cancellationEstimate.penalty_per_bidder.toFixed(1)}kg each).\n\nYour balance after cancellation: ${cancellationEstimate.remaining_balance_after_cancel.toFixed(1)}kg\n\n${cancellationReason ? `Cancellation reason: ${cancellationReason}\n\n` : ''}Are you sure you want to continue?`
+              : `There are no active bids on this task. You can cancel it for free.\n\n${cancellationReason ? `Cancellation reason: ${cancellationReason}\n\n` : ''}Are you sure you want to cancel this task?`
+          }
+          confirmText={cancellingTask ? 'Cancelling...' : 'Yes, Cancel Task'}
+          cancelText="No, Go Back"
+          type="danger"
+          onConfirm={handleCancelTask}
+          onCancel={() => setShowCancelConfirm(false)}
+        />
       </main>
     </div>
   );
