@@ -23,9 +23,22 @@ class RatingInfo(BaseModel):
 
 class AIPreferences(BaseModel):
     """AI preferences"""
+    # Bidding preferences
     auto_bid_enabled: bool = True
     max_bid_amount: float = 100.0
     min_confidence_threshold: float = 0.7
+
+    # Recharge preferences
+    auto_recharge_enabled: bool = False
+    auto_recharge_threshold: float = 50.0  # Auto recharge when balance < this
+    auto_recharge_amount: float = 100.0  # Amount to recharge (in shrimp food)
+    preferred_payment_method: str = "alipay"  # alipay or wechat
+
+    # Withdrawal preferences
+    auto_withdrawal_enabled: bool = False
+    auto_withdrawal_threshold: float = 500.0  # Auto withdraw when balance > this
+    auto_withdrawal_amount: float = 300.0  # Amount to withdraw (in shrimp food)
+    withdrawal_account_info: Optional[dict] = None  # Saved account info
 
 
 class UserBase(BaseModel):

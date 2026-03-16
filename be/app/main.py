@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
-from app.api.routes import auth, users, tasks, bids, contracts, ratings, ai
+from app.api.routes import auth, users, tasks, bids, contracts, ratings, ai, payment
 
 
 @asynccontextmanager
@@ -63,3 +63,4 @@ app.include_router(bids.router, prefix=f"{settings.API_PREFIX}/bids", tags=["Bid
 app.include_router(contracts.router, prefix=f"{settings.API_PREFIX}/contracts", tags=["Contracts"])
 app.include_router(ratings.router, prefix=f"{settings.API_PREFIX}/ratings", tags=["Ratings"])
 app.include_router(ai.router, prefix=f"{settings.API_PREFIX}/ai", tags=["AI"])
+app.include_router(payment.router, prefix=f"{settings.API_PREFIX}/payment", tags=["Payment"])

@@ -216,44 +216,67 @@ class ContractService:
             raise ValueError("Contract is not active")
 
         if approved:
-            # Transfer shrimp food
-            await db.users.update_one(
-                {"_id": contract["publisher_id"]},
-                {
-                    "$inc": {
-                        "shrimp_food_balance": -contract["amount"],
-                        "shrimp_food_frozen": -contract["amount"],
-                        "tasks_completed_as_publisher": 1
-                    }
-                }
-            )
+            # Import payment service for fee handling
+            from app.services.payment_service import payment_service
+            from app.core.config import settings
 
-            await db.users.update_one(
-                {"_id": contract["claimer_id"]},
-                {
-                    "$inc": {
-                        "shrimp_food_balance": contract["amount"],
-                        "tasks_completed_as_claimer": 1
-                    }
-                }
-            )
+            # Calculate platform fee (10%)
+            platform_fee = contract["amount"] * settings.PLATFORM_FEE_RATE
+            claimer_amount = contract["amount"] - platform_fee
 
-            # Update contract status
-            await db.contracts.update_one(
-                {"_id": ObjectId(contract_id)},
-                {
-                    "$set": {
-                        "status": ContractStatus.COMPLETED.value,
-                        "completed_at": datetime.utcnow()
-                    }
-                }
-            )
+            # Use MongoDB transaction for atomicity
+            async with await db.client.start_session() as session:
+                async with session.start_transaction():
+                    # 1. Publisher: deduct total amount
+                    await db.users.update_one(
+                        {"_id": contract["publisher_id"]},
+                        {
+                            "$inc": {
+                                "shrimp_food_balance": -contract["amount"],
+                                "shrimp_food_frozen": -contract["amount"],
+                                "tasks_completed_as_publisher": 1
+                            }
+                        },
+                        session=session
+                    )
 
-            # Update task status
-            await db.tasks.update_one(
-                {"_id": contract["task_id"]},
-                {"$set": {"status": TaskStatus.COMPLETED.value}}
-            )
+                    # 2. Claimer: receive 90% of amount
+                    await db.users.update_one(
+                        {"_id": contract["claimer_id"]},
+                        {
+                            "$inc": {
+                                "shrimp_food_balance": claimer_amount,
+                                "tasks_completed_as_claimer": 1
+                            }
+                        },
+                        session=session
+                    )
+
+                    # 3. Platform: collect 10% fee
+                    await payment_service.add_platform_fee(
+                        platform_fee,
+                        contract_id,
+                        session=session
+                    )
+
+                    # 4. Update contract status
+                    await db.contracts.update_one(
+                        {"_id": ObjectId(contract_id)},
+                        {
+                            "$set": {
+                                "status": ContractStatus.COMPLETED.value,
+                                "completed_at": datetime.utcnow()
+                            }
+                        },
+                        session=session
+                    )
+
+                    # 5. Update task status
+                    await db.tasks.update_one(
+                        {"_id": contract["task_id"]},
+                        {"$set": {"status": TaskStatus.COMPLETED.value}},
+                        session=session
+                    )
         else:
             # Disputed - need manual resolution
             await db.contracts.update_one(

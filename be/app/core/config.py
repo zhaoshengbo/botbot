@@ -40,6 +40,29 @@ class Settings(BaseSettings):
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 100
 
+    # Payment Settings
+    RECHARGE_EXCHANGE_RATE: float = 10.0
+    WITHDRAWAL_EXCHANGE_RATE: float = 10.0
+    PLATFORM_FEE_RATE: float = 0.10
+    MIN_RECHARGE_AMOUNT: float = 1.0
+    MIN_WITHDRAWAL_AMOUNT: float = 100.0
+
+    # Alipay
+    ALIPAY_APP_ID: str = ""
+    ALIPAY_PRIVATE_KEY_PATH: str = ""
+    ALIPAY_PUBLIC_KEY_PATH: str = ""
+    ALIPAY_NOTIFY_URL: str = ""
+    ALIPAY_RETURN_URL: str = ""
+    ALIPAY_GATEWAY: str = "https://openapi.alipay.com/gateway.do"
+
+    # WeChat Pay
+    WECHAT_APP_ID: str = ""
+    WECHAT_MCH_ID: str = ""
+    WECHAT_API_KEY: str = ""
+    WECHAT_APICLIENT_CERT_PATH: str = ""
+    WECHAT_APICLIENT_KEY_PATH: str = ""
+    WECHAT_NOTIFY_URL: str = ""
+
     @field_validator('CORS_ORIGINS', mode='before')
     @classmethod
     def parse_cors_origins(cls, v):

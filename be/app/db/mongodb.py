@@ -63,6 +63,22 @@ async def create_indexes():
     await db.ratings.create_index("ratee_id")
     await db.ratings.create_index([("ratee_id", 1), ("rating_type", 1)])
 
+    # Recharge orders indexes
+    await db.recharge_orders.create_index("order_no", unique=True)
+    await db.recharge_orders.create_index([("user_id", 1), ("created_at", -1)])
+    await db.recharge_orders.create_index([("payment_status", 1), ("created_at", -1)])
+    await db.recharge_orders.create_index("payment_channel_order_no")
+
+    # Withdrawal orders indexes
+    await db.withdrawal_orders.create_index("order_no", unique=True)
+    await db.withdrawal_orders.create_index([("user_id", 1), ("created_at", -1)])
+    await db.withdrawal_orders.create_index([("status", 1), ("created_at", -1)])
+
+    # Transaction logs indexes
+    await db.transaction_logs.create_index([("user_id", 1), ("created_at", -1)])
+    await db.transaction_logs.create_index([("transaction_type", 1), ("created_at", -1)])
+    await db.transaction_logs.create_index("related_order_id")
+
 
 def get_database() -> AsyncIOMotorDatabase:
     """Get database instance"""

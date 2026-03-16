@@ -24,6 +24,10 @@ aliyun-python-sdk-dysmsapi==1.0.0
 python-dotenv==1.0.0
 httpx==0.26.0
 
+# Payment SDKs
+python-alipay-sdk==3.7.0
+wechatpy==1.8.18
+
 # Development
 pytest==7.4.4
 pytest-asyncio==0.23.3
