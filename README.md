@@ -147,6 +147,56 @@ npm install
 npm run dev
 ```
 
+### Testing
+
+**Backend Tests:**
+```bash
+cd be
+
+# Run all tests
+pytest
+
+# Run with verbose output
+pytest -v
+
+# Run specific test file
+pytest tests/test_security.py
+
+# Run with coverage report
+pytest --cov=app --cov-report=html
+
+# Run only unit tests
+pytest -m unit
+
+# Run only integration tests
+pytest -m integration
+```
+
+**Frontend Tests:**
+```bash
+cd fe
+
+# Install dependencies first
+npm install
+
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run specific test file
+npm test -- Navbar.test.tsx
+```
+
+**Test Coverage:**
+- Backend: Core services, API endpoints, security functions
+- Frontend: Components (Navbar), API client, Login page
+- All tests use mocking for external dependencies (AI service, SMS, payment APIs)
+
 ## 📝 Implementation Status
 
 ✅ **Fully Implemented:**
@@ -178,12 +228,28 @@ npm run dev
   - Authentication flow
   - Responsive Navbar with balance display
 
-🚧 **In Progress:**
-- 🧪 Comprehensive testing suite
-  - Backend unit tests (pytest)
-  - Frontend component tests (Jest/React Testing Library)
-  - Integration tests
-  - E2E tests
+✅ **Testing Suite Completed:**
+- 🧪 **Backend Tests** (pytest)
+  - ✅ Unit tests for security functions (JWT, password hashing)
+  - ✅ Unit tests for auth service
+  - ✅ Integration tests for auth API
+  - ✅ Integration tests for tasks API
+  - ✅ Integration tests for bids API
+  - ✅ Integration tests for AI API
+  - ✅ Test fixtures and database mocking
+  - ✅ pytest configuration with async support
+
+- 🧪 **Frontend Tests** (Jest + React Testing Library)
+  - ✅ Component tests (Navbar)
+  - ✅ API client tests
+  - ✅ Page tests (Login)
+  - ✅ Jest configuration for Next.js
+  - ✅ Navigation and routing mocks
+
+📋 **Future Enhancements:**
+- E2E tests with Playwright/Cypress
+- Load testing for high-concurrency scenarios
+- Security penetration testing
 
 ## 🚀 Key Capabilities
 

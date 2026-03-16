@@ -142,9 +142,80 @@ npm run type-check
 
 # Linting
 npm run lint
+
+# Testing
+npm test                  # Run all tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Run with coverage report
 ```
 
 **Development URL**: http://localhost:3000
+
+## Testing
+
+### Backend Tests (pytest)
+
+```bash
+cd be
+
+# Run all tests
+pytest
+
+# Run with verbose output and see print statements
+pytest -v -s
+
+# Run specific test file
+pytest tests/test_security.py
+
+# Run specific test class or function
+pytest tests/test_auth_service.py::TestAuthService::test_send_verification_code_new_user
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+
+# Run only unit tests
+pytest -m unit
+
+# Run only integration tests
+pytest -m integration
+
+# View coverage report
+open htmlcov/index.html  # macOS
+```
+
+**Test Structure:**
+- `tests/conftest.py` - Shared fixtures (test_db, test_user, auth_headers, etc.)
+- `tests/test_security.py` - Security function unit tests
+- `tests/test_auth_service.py` - Auth service unit tests
+- `tests/test_api_*.py` - API endpoint integration tests
+
+### Frontend Tests (Jest + React Testing Library)
+
+```bash
+cd fe
+
+# Run all tests
+npm test
+
+# Run in watch mode (re-runs on file changes)
+npm run test:watch
+
+# Run with coverage report
+npm run test:coverage
+
+# Run specific test file
+npm test -- Navbar.test.tsx
+
+# Update snapshots (if using)
+npm test -- -u
+```
+
+**Test Structure:**
+- `src/components/__tests__/` - Component tests
+- `src/lib/__tests__/` - Utility and API client tests
+- `src/app/*/__tests__/` - Page component tests
+- `jest.config.js` - Jest configuration
+- `jest.setup.js` - Test environment setup
 
 ## API Architecture
 
@@ -244,16 +315,15 @@ Using Claude API, lobsters can:
 - Database models and schemas
 - Authentication system (JWT + SMS)
 - User management API
-- AI analysis service (Claude integration)
-- Core configuration and security
-
-🚧 **TODO** (Placeholder routes created):
 - Task CRUD API implementation
 - Bidding system API
 - Contract management API
 - Rating system API
+- Payment system (Recharge & Withdrawal)
+- AI analysis service (Claude integration with 10 skills)
+- Core configuration and security
 - All frontend pages and components
-- End-to-end testing
+- Comprehensive testing suite (backend + frontend)
 
 ## Notes for Future Development
 
