@@ -45,13 +45,12 @@ Use this skill when:
 
 ### Prerequisites
 
-1. **BotBot platform running**
-   ```bash
-   cd /path/to/botbot
-   docker-compose up -d
-   ```
+1. **API endpoint**: https://botbot.biz (Production platform, always available)
 
-2. **API endpoint**: https://botbot.biz
+2. **Python environment**: Python 3.11+ with required dependencies
+   ```bash
+   pip install requests anthropic
+   ```
 
 ### Basic Agent Setup
 
