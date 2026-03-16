@@ -16,18 +16,61 @@ async def create_bid_v2(
     bid_data: BidCreate,
     current_user_id: str = Depends(get_current_user_id)
 ):
-    """Submit a bid on a task (v2 - cleaner API)"""
+    """Submit a bid on a task (v2 - with mandatory AI evaluation)"""
     db = get_database()
 
     try:
-        bid = await bid_service.create_bid(bid_data.task_id, bid_data, current_user_id, None)
+        # Get task and user for AI evaluation
+        task = await db.tasks.find_one({"_id": ObjectId(bid_data.task_id)})
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Task not found"
+            )
+
+        user = await db.users.find_one({"_id": ObjectId(current_user_id)})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        # Mandatory AI evaluation before bidding
+        can_complete, suggested_bid, analysis = await ai_service.analyze_task(
+            task_title=task.get("title", ""),
+            task_description=task.get("description", ""),
+            task_deliverables=task.get("deliverables", ""),
+            task_budget=task.get("budget", 0),
+            user_level=user.get("level", "Bronze"),
+            user_completed_tasks=user.get("tasks_completed_as_claimer", 0)
+        )
+
+        # Check AI preferences
+        ai_prefs = user.get("ai_preferences", {})
+        min_confidence = ai_prefs.get("min_confidence_threshold", 0.7)
+
+        # Block bidding if AI evaluation fails
+        if not can_complete:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"AI evaluation: Cannot complete this task. Reason: {analysis.reasoning}"
+            )
+
+        # Block if confidence is too low
+        if analysis.confidence < min_confidence:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"AI evaluation: Confidence too low ({analysis.confidence:.2f} < {min_confidence:.2f}). Consider improving your skills first."
+            )
+
+        # Create bid with AI analysis
+        bid = await bid_service.create_bid(bid_data.task_id, bid_data, current_user_id, analysis)
 
         bid["_id"] = str(bid["_id"])
         bid["task_id"] = str(bid["task_id"])
         bid["bidder_id"] = str(bid["bidder_id"])
 
         # Get bidder username
-        user = await db.users.find_one({"_id": ObjectId(current_user_id)})
         bid["bidder_username"] = user.get("username") if user else None
 
         return BidResponse(**bid)
@@ -36,6 +79,8 @@ async def create_bid_v2(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
         )
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -591,3 +591,163 @@ async def get_auto_finance_status(
             "will_trigger": available > ai_prefs.get("auto_withdrawal_threshold", 500.0)
         }
     }
+
+
+@router.get("/evaluate-tasks")
+async def evaluate_available_tasks(
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """
+    Batch evaluate all available tasks for current lobster
+    Returns a list of tasks with AI evaluation results
+    """
+    db = get_database()
+
+    # Get user
+    user = await db.users.find_one({"_id": ObjectId(current_user_id)})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Get all open/bidding tasks
+    tasks = await db.tasks.find({
+        "status": {"$in": ["open", "bidding"]},
+        "publisher_id": {"$ne": ObjectId(current_user_id)}  # Exclude own tasks
+    }).to_list(None)
+
+    # Get AI preferences
+    ai_prefs = user.get("ai_preferences", {})
+    min_confidence = ai_prefs.get("min_confidence_threshold", 0.7)
+    max_bid = ai_prefs.get("max_bid_amount", 100.0)
+
+    evaluations = []
+
+    for task in tasks:
+        try:
+            # Analyze each task
+            can_complete, suggested_bid, analysis = await ai_service.analyze_task(
+                task_title=task.get("title", ""),
+                task_description=task.get("description", ""),
+                task_deliverables=task.get("deliverables", ""),
+                task_budget=task.get("budget", 0),
+                user_level=user.get("level", "Bronze"),
+                user_completed_tasks=user.get("tasks_completed_as_claimer", 0)
+            )
+
+            # Determine recommendation
+            should_bid = (
+                can_complete and
+                analysis.confidence >= min_confidence and
+                suggested_bid is not None and
+                suggested_bid <= max_bid
+            )
+
+            evaluations.append({
+                "task_id": str(task["_id"]),
+                "task_title": task.get("title", ""),
+                "task_budget": task.get("budget", 0),
+                "can_complete": can_complete,
+                "suggested_bid_amount": suggested_bid,
+                "confidence": analysis.confidence,
+                "estimated_hours": analysis.estimated_hours,
+                "feasibility_score": analysis.feasibility_score,
+                "reasoning": analysis.reasoning,
+                "should_bid": should_bid,
+                "recommendation": "✅ 推荐接单" if should_bid else ("⚠️ 能力不足" if not can_complete else "❌ 不推荐")
+            })
+
+        except Exception as e:
+            # Skip tasks that fail evaluation
+            evaluations.append({
+                "task_id": str(task["_id"]),
+                "task_title": task.get("title", ""),
+                "error": f"评估失败: {str(e)}"
+            })
+
+    # Sort by recommendation
+    evaluations.sort(key=lambda x: x.get("should_bid", False), reverse=True)
+
+    return {
+        "success": True,
+        "total_tasks": len(tasks),
+        "recommended_tasks": sum(1 for e in evaluations if e.get("should_bid")),
+        "evaluations": evaluations
+    }
+
+
+@router.post("/evaluate-task-batch")
+async def evaluate_specific_tasks(
+    task_ids: list[str],
+    current_user_id: str = Depends(get_current_user_id)
+):
+    """
+    Evaluate specific tasks by IDs
+    """
+    db = get_database()
+
+    # Get user
+    user = await db.users.find_one({"_id": ObjectId(current_user_id)})
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Get AI preferences
+    ai_prefs = user.get("ai_preferences", {})
+    min_confidence = ai_prefs.get("min_confidence_threshold", 0.7)
+    max_bid = ai_prefs.get("max_bid_amount", 100.0)
+
+    evaluations = []
+
+    for task_id in task_ids:
+        try:
+            task = await db.tasks.find_one({"_id": ObjectId(task_id)})
+            if not task:
+                evaluations.append({
+                    "task_id": task_id,
+                    "error": "Task not found"
+                })
+                continue
+
+            # Analyze task
+            can_complete, suggested_bid, analysis = await ai_service.analyze_task(
+                task_title=task.get("title", ""),
+                task_description=task.get("description", ""),
+                task_deliverables=task.get("deliverables", ""),
+                task_budget=task.get("budget", 0),
+                user_level=user.get("level", "Bronze"),
+                user_completed_tasks=user.get("tasks_completed_as_claimer", 0)
+            )
+
+            should_bid = (
+                can_complete and
+                analysis.confidence >= min_confidence and
+                suggested_bid is not None and
+                suggested_bid <= max_bid
+            )
+
+            evaluations.append({
+                "task_id": task_id,
+                "task_title": task.get("title", ""),
+                "task_budget": task.get("budget", 0),
+                "can_complete": can_complete,
+                "suggested_bid_amount": suggested_bid,
+                "confidence": analysis.confidence,
+                "estimated_hours": analysis.estimated_hours,
+                "reasoning": analysis.reasoning,
+                "should_bid": should_bid
+            })
+
+        except Exception as e:
+            evaluations.append({
+                "task_id": task_id,
+                "error": f"评估失败: {str(e)}"
+            })
+
+    return {
+        "success": True,
+        "evaluations": evaluations
+    }
