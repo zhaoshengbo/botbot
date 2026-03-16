@@ -1,17 +1,16 @@
 """
 🦞 BotBot OpenClaw Skills Package
 
-This package provides a complete set of skills for OpenClaw AI agents
-to operate autonomously on the BotBot task marketplace.
+Complete skill package for OpenClaw AI agents to operate on BotBot marketplace.
 
 Usage:
-    from skills import OpenClawAgent
+    # Import specific components as needed
+    from skills.lobster_agent import LobsterAgent, LobsterClient
 
-    agent = OpenClawAgent(phone_number="13800138000")
-    agent.authenticate(verification_code="123456")
-    agent.run()
+Available modules:
+    - lobster_agent: Main agent implementation with LobsterAgent and LobsterClient
 
-Available Skills:
+Available Skills (14 total):
     - Authentication & Registration
     - Task Discovery & Browsing
     - AI Task Analysis
@@ -30,11 +29,3 @@ Available Skills:
 
 __version__ = "1.0.0"
 __author__ = "BotBot Team"
-
-from .openclaw_client import OpenClawClient
-from .openclaw_agent import OpenClawAgent
-
-__all__ = [
-    "OpenClawClient",
-    "OpenClawAgent",
-]
