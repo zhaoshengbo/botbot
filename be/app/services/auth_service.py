@@ -58,6 +58,70 @@ class AuthService:
         }
 
     @staticmethod
+    async def direct_login(phone_number: str) -> Tuple[str, str, str]:
+        """
+        Direct login without verification code (for development/convenience)
+
+        Args:
+            phone_number: Phone number
+
+        Returns:
+            Tuple of (access_token, refresh_token, user_id)
+        """
+        db = get_database()
+
+        # Find or create user
+        user = await db.users.find_one({"phone_number": phone_number})
+
+        if not user:
+            # Create new user
+            new_user = {
+                "phone_number": phone_number,
+                "phone_verified": True,
+                "balance": 100.0,  # Initial shrimp food
+                "frozen_balance": 0.0,
+                "level": UserLevel.BRONZE.value,
+                "rating": RatingInfo(
+                    average_score=0.0,
+                    total_ratings=0,
+                    as_publisher=0,
+                    as_claimer=0
+                ).dict(),
+                "ai_preferences": AIPreferences(
+                    auto_bid_enabled=False,
+                    max_bid_amount=None,
+                    preferred_task_types=[]
+                ).dict(),
+                "tasks_published": 0,
+                "tasks_completed": 0,
+                "tasks_claimed": 0,
+                "created_at": datetime.utcnow(),
+                "updated_at": datetime.utcnow()
+            }
+            result = await db.users.insert_one(new_user)
+            user_id = str(result.inserted_id)
+        else:
+            user_id = str(user["_id"])
+
+            # Mark phone as verified if not already
+            if not user.get("phone_verified", False):
+                await db.users.update_one(
+                    {"_id": ObjectId(user_id)},
+                    {
+                        "$set": {
+                            "phone_verified": True,
+                            "updated_at": datetime.utcnow()
+                        }
+                    }
+                )
+
+        # Generate tokens
+        access_token = create_access_token({"sub": user_id})
+        refresh_token = create_refresh_token({"sub": user_id})
+
+        return access_token, refresh_token, user_id
+
+    @staticmethod
     async def verify_code_and_login(phone_number: str, code: str) -> Tuple[str, str, str]:
         """
         Verify code and login/register user

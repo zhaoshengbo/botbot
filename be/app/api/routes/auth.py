@@ -69,11 +69,9 @@ async def direct_login_or_register(request: SendCodeRequest):
     such as rate limiting, device fingerprinting, or IP whitelist.
     """
     try:
-        # Use a fixed verification code for direct login
-        # In production, consider adding additional verification methods
-        access_token, refresh_token, user_id = await auth_service.verify_code_and_login(
-            request.phone_number,
-            "123456"  # Use the mock verification code
+        # Use the new direct_login method that bypasses verification
+        access_token, refresh_token, user_id = await auth_service.direct_login(
+            request.phone_number
         )
 
         return TokenResponse(
