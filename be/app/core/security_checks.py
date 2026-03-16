@@ -29,18 +29,26 @@ def check_production_security():
     ]
 
     if settings.SECRET_KEY in weak_secrets or len(settings.SECRET_KEY) < 32:
-        errors.append(
-            "🚨 CRITICAL: SECRET_KEY is weak or using default value!\n"
+        message = (
+            "SECRET_KEY is weak or using default value!\n"
             "   Generate a strong secret: openssl rand -hex 32\n"
             "   Update SECRET_KEY in your .env file."
         )
+        if settings.DEBUG:
+            warnings.append(f"⚠️  {message}")
+        else:
+            errors.append(f"🚨 CRITICAL: {message}")
 
     if settings.JWT_SECRET_KEY in weak_secrets or len(settings.JWT_SECRET_KEY) < 32:
-        errors.append(
-            "🚨 CRITICAL: JWT_SECRET_KEY is weak or using default value!\n"
+        message = (
+            "JWT_SECRET_KEY is weak or using default value!\n"
             "   Generate a strong secret: openssl rand -hex 32\n"
             "   Update JWT_SECRET_KEY in your .env file."
         )
+        if settings.DEBUG:
+            warnings.append(f"⚠️  {message}")
+        else:
+            errors.append(f"🚨 CRITICAL: {message}")
 
     # Check CORS
     cors_origins = settings.get_cors_origins()
