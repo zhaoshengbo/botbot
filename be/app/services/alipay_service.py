@@ -1,15 +1,7 @@
 """Alipay Payment Service"""
 import os
 from typing import Dict, Any, Optional
-from alipay.aop.api.AlipayClientConfig import AlipayClientConfig
-from alipay.aop.api.DefaultAlipayClient import DefaultAlipayClient
-from alipay.aop.api.domain.AlipayTradePagePayModel import AlipayTradePagePayModel
-from alipay.aop.api.domain.AlipayTradeWapPayModel import AlipayTradeWapPayModel
-from alipay.aop.api.domain.AlipayTradeQueryModel import AlipayTradeQueryModel
-from alipay.aop.api.request.AlipayTradePagePayRequest import AlipayTradePagePayRequest
-from alipay.aop.api.request.AlipayTradeWapPayRequest import AlipayTradeWapPayRequest
-from alipay.aop.api.request.AlipayTradeQueryRequest import AlipayTradeQueryRequest
-from alipay.aop.api.util.SignatureUtils import verify_with_rsa
+from alipay import AliPay
 
 from app.core.config import settings
 
@@ -24,31 +16,35 @@ class AlipayService:
             self.client = None
             return
 
-        # Initialize config
-        self.config = AlipayClientConfig()
-        self.config.server_url = settings.ALIPAY_GATEWAY
-        self.config.app_id = settings.ALIPAY_APP_ID
-
         # Read private key
+        app_private_key_string = None
         if settings.ALIPAY_PRIVATE_KEY_PATH and os.path.exists(settings.ALIPAY_PRIVATE_KEY_PATH):
             with open(settings.ALIPAY_PRIVATE_KEY_PATH, 'r') as f:
-                self.config.app_private_key = f.read()
+                app_private_key_string = f.read()
         else:
             print("Warning: Alipay private key not found")
             self.client = None
             return
 
         # Read public key
+        alipay_public_key_string = None
         if settings.ALIPAY_PUBLIC_KEY_PATH and os.path.exists(settings.ALIPAY_PUBLIC_KEY_PATH):
             with open(settings.ALIPAY_PUBLIC_KEY_PATH, 'r') as f:
-                self.config.alipay_public_key = f.read()
+                alipay_public_key_string = f.read()
         else:
             print("Warning: Alipay public key not found")
             self.client = None
             return
 
         # Create client
-        self.client = DefaultAlipayClient(alipay_client_config=self.config)
+        self.client = AliPay(
+            appid=settings.ALIPAY_APP_ID,
+            app_notify_url=settings.ALIPAY_NOTIFY_URL,
+            app_private_key_string=app_private_key_string,
+            alipay_public_key_string=alipay_public_key_string,
+            sign_type="RSA2",
+            debug="sandbox" in settings.ALIPAY_GATEWAY.lower()
+        )
 
     async def create_page_pay(
         self,
@@ -59,26 +55,22 @@ class AlipayService:
     ) -> str:
         """
         Create PC web payment
-        Returns: Payment form HTML
+        Returns: Payment URL
         """
         if not self.client:
             raise RuntimeError("Alipay not configured")
 
-        # Create payment model
-        model = AlipayTradePagePayModel()
-        model.out_trade_no = order_no
-        model.total_amount = f"{amount:.2f}"
-        model.subject = subject
-        model.product_code = "FAST_INSTANT_TRADE_PAY"
+        # Build order string
+        order_string = self.client.api_alipay_trade_page_pay(
+            out_trade_no=order_no,
+            total_amount=f"{amount:.2f}",
+            subject=subject,
+            return_url=return_url or settings.ALIPAY_RETURN_URL,
+            notify_url=settings.ALIPAY_NOTIFY_URL
+        )
 
-        # Create request
-        request = AlipayTradePagePayRequest(biz_model=model)
-        request.notify_url = settings.ALIPAY_NOTIFY_URL
-        request.return_url = return_url or settings.ALIPAY_RETURN_URL
-
-        # Execute request
-        response = self.client.page_execute(request, http_method="GET")
-        return response
+        # Return full payment URL
+        return f"{settings.ALIPAY_GATEWAY}?{order_string}"
 
     async def create_wap_pay(
         self,
@@ -89,26 +81,22 @@ class AlipayService:
     ) -> str:
         """
         Create mobile WAP payment
-        Returns: Payment form HTML
+        Returns: Payment URL
         """
         if not self.client:
             raise RuntimeError("Alipay not configured")
 
-        # Create payment model
-        model = AlipayTradeWapPayModel()
-        model.out_trade_no = order_no
-        model.total_amount = f"{amount:.2f}"
-        model.subject = subject
-        model.product_code = "QUICK_WAP_WAY"
+        # Build order string
+        order_string = self.client.api_alipay_trade_wap_pay(
+            out_trade_no=order_no,
+            total_amount=f"{amount:.2f}",
+            subject=subject,
+            return_url=return_url or settings.ALIPAY_RETURN_URL,
+            notify_url=settings.ALIPAY_NOTIFY_URL
+        )
 
-        # Create request
-        request = AlipayTradeWapPayRequest(biz_model=model)
-        request.notify_url = settings.ALIPAY_NOTIFY_URL
-        request.return_url = return_url or settings.ALIPAY_RETURN_URL
-
-        # Execute request
-        response = self.client.page_execute(request, http_method="GET")
-        return response
+        # Return full payment URL
+        return f"{settings.ALIPAY_GATEWAY}?{order_string}"
 
     async def verify_notify(self, params: Dict[str, Any]) -> bool:
         """
@@ -122,20 +110,9 @@ class AlipayService:
         if not sign:
             return False
 
-        # Remove sign and sign_type from params
-        verify_params = {k: v for k, v in params.items() if k not in ["sign", "sign_type"]}
-
-        # Sort parameters
-        sorted_params = sorted(verify_params.items())
-        message = "&".join([f"{k}={v}" for k, v in sorted_params])
-
-        # Verify signature
+        # Verify signature using SDK
         try:
-            return verify_with_rsa(
-                self.config.alipay_public_key.encode('utf-8'),
-                message.encode('utf-8'),
-                sign
-            )
+            return self.client.verify(params, sign)
         except Exception as e:
             print(f"Alipay signature verification failed: {e}")
             return False
@@ -147,16 +124,11 @@ class AlipayService:
         if not self.client:
             raise RuntimeError("Alipay not configured")
 
-        # Create query model
-        model = AlipayTradeQueryModel()
-        model.out_trade_no = order_no
-
-        # Create request
-        request = AlipayTradeQueryRequest(biz_model=model)
-
         try:
-            # Execute request
-            response = self.client.execute(request)
+            # Execute query
+            response = self.client.api_alipay_trade_query(
+                out_trade_no=order_no
+            )
 
             # Parse response
             if response.get("code") == "10000":
