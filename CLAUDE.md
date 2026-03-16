@@ -26,6 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Infrastructure
 - **Containerization**: Docker + Docker Compose
+- **Reverse Proxy**: Nginx (domain-based routing)
 - **Database**: MongoDB 6.0
 - **Development**: Hot reload enabled for both services
 
@@ -81,7 +82,13 @@ botbot/
 │   ├── tailwind.config.ts
 │   └── Dockerfile
 │
+├── nginx/                      # Nginx reverse proxy config
+│   ├── nginx.conf             # Main Nginx config
+│   ├── conf.d/
+│   │   └── botbot.conf        # BotBot site config
+│   └── README.md              # Nginx documentation
 ├── docker-compose.yml          # Local development environment
+├── setup-local-domain.sh       # Local domain setup script
 └── CLAUDE.md                   # This file
 
 ## Development Commands
@@ -95,12 +102,31 @@ cp fe/.env.example fe/.env
 # Edit .env files with your configuration
 ```
 
-2. **Start with Docker Compose** (recommended):
+2. **Configure local domain** (for domain-based access):
+```bash
+./setup-local-domain.sh
+# This adds botbot.biz to /etc/hosts pointing to 127.0.0.1
+```
+
+3. **Start with Docker Compose** (recommended):
 ```bash
 docker-compose up -d          # Start all services
 docker-compose logs -f        # View logs
 docker-compose down           # Stop services
 ```
+
+### Access URLs
+
+**With Nginx (domain-based, recommended):**
+- Frontend: http://botbot.biz
+- Backend API: http://botbot.biz/api
+- API Docs: http://botbot.biz/docs
+- Health Check: http://botbot.biz/health
+
+**Direct access (if ports exposed):**
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- MongoDB: mongodb://localhost:27017
 
 ### Backend Development
 

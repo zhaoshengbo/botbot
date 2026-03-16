@@ -14,14 +14,31 @@ services:
     networks:
       - botbot-network
 
+  nginx:
+    image: nginx:alpine
+    container_name: botbot-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - botbot-network
+
   backend:
     build:
       context: ./be
       dockerfile: Dockerfile
     container_name: botbot-backend
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     environment:
       - MONGODB_URL=mongodb://mongodb:27017
       - MONGODB_DB_NAME=botbot
@@ -46,13 +63,13 @@ services:
       context: ./fe
       dockerfile: Dockerfile.simple
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://botbot.biz}
     container_name: botbot-frontend
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://botbot.biz}
     depends_on:
       - backend
     networks:
@@ -60,6 +77,7 @@ services:
 
 volumes:
   mongodb_data:
+  nginx_logs:
 
 networks:
   botbot-network:
