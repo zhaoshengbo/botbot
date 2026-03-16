@@ -47,6 +47,10 @@ class Settings(BaseSettings):
     MIN_RECHARGE_AMOUNT: float = 1.0
     MIN_WITHDRAWAL_AMOUNT: float = 100.0
 
+    # Admin Configuration
+    SUPER_ADMIN_PHONE: str = ""
+    MIN_PLATFORM_WITHDRAWAL_AMOUNT: float = 1000.0
+
     # Alipay
     ALIPAY_APP_ID: str = ""
     ALIPAY_PRIVATE_KEY_PATH: str = ""

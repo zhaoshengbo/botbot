@@ -4,18 +4,32 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
+from app.core.security_checks import check_production_security
 from app.db.mongodb import connect_to_mongo, close_mongo_connection
-from app.api.routes import auth, users, tasks, bids, contracts, ratings, ai, payment
+from app.api.routes import auth, users, tasks, bids, contracts, ratings, ai, payment, admin
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
+    print(f"\n🦞 Starting BotBot API v1.0")
+    print(f"📍 Environment: {'Development' if settings.DEBUG else 'Production'}")
+
+    # Security checks
+    check_production_security()
+
+    # Connect to database
     await connect_to_mongo()
+
+    print(f"✅ BotBot API started successfully\n")
+
     yield
+
     # Shutdown
+    print("\n👋 Shutting down BotBot API...")
     await close_mongo_connection()
+    print("✅ Shutdown complete\n")
 
 
 # Create FastAPI app
@@ -42,6 +56,31 @@ app.add_middleware(
 )
 
 
+# Security headers middleware
+@app.middleware("http")
+async def add_security_headers(request, call_next):
+    """Add security headers to all responses"""
+    response = await call_next(request)
+
+    # Prevent clickjacking
+    response.headers["X-Frame-Options"] = "DENY"
+
+    # Prevent MIME type sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+
+    # Enable XSS protection
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+
+    # Referrer policy
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+    # Content Security Policy (basic)
+    if not settings.DEBUG:
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+    return response
+
+
 # Health check
 @app.get("/")
 async def root():
@@ -64,3 +103,4 @@ app.include_router(contracts.router, prefix=f"{settings.API_PREFIX}/contracts", 
 app.include_router(ratings.router, prefix=f"{settings.API_PREFIX}/ratings", tags=["Ratings"])
 app.include_router(ai.router, prefix=f"{settings.API_PREFIX}/ai", tags=["AI"])
 app.include_router(payment.router, prefix=f"{settings.API_PREFIX}/payment", tags=["Payment"])
+app.include_router(admin.router, prefix=f"{settings.API_PREFIX}/admin", tags=["Admin"])

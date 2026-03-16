@@ -71,6 +71,27 @@ async def get_current_user_id(
     return user_id
 
 
+async def get_current_admin_id(
+    user_id: str = Depends(get_current_user_id)
+) -> str:
+    """
+    Verify current user is admin, otherwise raise 403
+    """
+    from bson import ObjectId
+    from app.db.mongodb import get_database
+
+    db = get_database()
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+
+    if not user or user.get("role") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    return user_id
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against a hash"""
     return pwd_context.verify(plain_password, hashed_password)

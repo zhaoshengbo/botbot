@@ -21,7 +21,7 @@ from app.schemas.payment import (
 from app.services.payment_service import payment_service
 from app.services.alipay_service import alipay_service
 from app.services.wechat_pay_service import wechat_pay_service
-from app.core.security import get_current_user_id
+from app.core.security import get_current_user_id, get_current_admin_id
 from app.db.mongodb import get_database
 
 router = APIRouter()
@@ -398,7 +398,7 @@ async def cancel_withdrawal(
 async def review_withdrawal(
     order_no: str,
     review_data: WithdrawalReview,
-    admin_id: str = Depends(get_current_user_id)  # TODO: Replace with admin auth
+    admin_id: str = Depends(get_current_admin_id)
 ):
     """
     Review withdrawal request (admin only)
@@ -427,7 +427,7 @@ async def review_withdrawal(
 async def complete_withdrawal(
     order_no: str,
     transfer_order_no: str,
-    admin_id: str = Depends(get_current_user_id)  # TODO: Replace with admin auth
+    admin_id: str = Depends(get_current_admin_id)
 ):
     """
     Complete withdrawal after transfer (admin only)
@@ -455,7 +455,7 @@ async def complete_withdrawal(
 
 @router.get("/admin/stats/platform", response_model=PlatformStatsResponse)
 async def get_platform_stats(
-    admin_id: str = Depends(get_current_user_id)  # TODO: Replace with admin auth
+    admin_id: str = Depends(get_current_admin_id)
 ):
     """
     Get platform statistics (admin only)

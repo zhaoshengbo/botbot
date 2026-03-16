@@ -32,6 +32,7 @@ class AuthService:
         expires_at = datetime.utcnow() + timedelta(minutes=5)
 
         # Update or create temp verification record
+        # SECURITY: Reset failed attempts when new code is sent
         await db.users.update_one(
             {"phone_number": phone_number},
             {
@@ -39,6 +40,7 @@ class AuthService:
                     "verification_code": code,
                     "verification_code_expires": expires_at,
                     "phone_number": phone_number,
+                    "verification_failed_attempts": 0
                 }
             },
             upsert=True
@@ -75,13 +77,23 @@ class AuthService:
         if not user:
             raise ValueError("Invalid phone number or code")
 
-        # Check code
-        if user.get("verification_code") != code:
-            raise ValueError("Invalid verification code")
+        # SECURITY: Check failed attempts to prevent brute force
+        failed_attempts = user.get("verification_failed_attempts", 0)
+        if failed_attempts >= 5:
+            raise ValueError("Too many failed attempts. Please request a new verification code.")
 
-        # Check expiry
+        # Check expiry first
         if user.get("verification_code_expires", datetime.min) < datetime.utcnow():
             raise ValueError("Verification code expired")
+
+        # Check code
+        if user.get("verification_code") != code:
+            # SECURITY: Increment failed attempts
+            await db.users.update_one(
+                {"phone_number": phone_number},
+                {"$inc": {"verification_failed_attempts": 1}}
+            )
+            raise ValueError("Invalid verification code")
 
         # Check if user is already registered (has phone_verified=True)
         is_new_user = not user.get("phone_verified", False)
@@ -118,7 +130,11 @@ class AuthService:
                 },
                 "created_at": datetime.utcnow(),
                 "updated_at": datetime.utcnow(),
-                "$unset": {"verification_code": "", "verification_code_expires": ""}
+                "$unset": {
+                    "verification_code": "",
+                    "verification_code_expires": "",
+                    "verification_failed_attempts": ""
+                }
             }
 
             await db.users.update_one(
@@ -130,11 +146,15 @@ class AuthService:
             user = await db.users.find_one({"phone_number": phone_number})
 
         else:
-            # Existing user - just clear verification code
+            # Existing user - clear verification code and failed attempts
             await db.users.update_one(
                 {"phone_number": phone_number},
                 {
-                    "$unset": {"verification_code": "", "verification_code_expires": ""},
+                    "$unset": {
+                        "verification_code": "",
+                        "verification_code_expires": "",
+                        "verification_failed_attempts": ""
+                    },
                     "$set": {"updated_at": datetime.utcnow()}
                 }
             )

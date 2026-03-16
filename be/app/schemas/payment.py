@@ -30,6 +30,16 @@ class WithdrawalStatus(str, Enum):
     FAILED = "failed"
 
 
+class PlatformWithdrawalStatus(str, Enum):
+    """Platform withdrawal order status"""
+    PENDING = "pending"
+    REVIEWING = "reviewing"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+
+
 class WithdrawalMethod(str, Enum):
     """Withdrawal method enum"""
     ALIPAY = "alipay"
@@ -55,7 +65,12 @@ class WithdrawalAccount(BaseModel):
 # Recharge Schemas
 class RechargeCreate(BaseModel):
     """Create recharge order"""
-    amount_rmb: float = Field(..., gt=0, description="充值金额（人民币）")
+    amount_rmb: float = Field(
+        ...,
+        gt=0,
+        le=50000,  # Max 50,000 RMB per transaction
+        description="充值金额（人民币）"
+    )
     payment_method: PaymentMethod
     device_info: Optional[DeviceInfo] = None
 
@@ -91,7 +106,12 @@ class RechargePaymentInfo(BaseModel):
 # Withdrawal Schemas
 class WithdrawalCreate(BaseModel):
     """Create withdrawal order"""
-    amount_shrimp: float = Field(..., gt=0, description="提现虾粮数量")
+    amount_shrimp: float = Field(
+        ...,
+        gt=0,
+        le=1000000,  # Max 1,000,000 kg (100,000 RMB)
+        description="提现虾粮数量"
+    )
     withdrawal_method: WithdrawalMethod
     withdrawal_account: WithdrawalAccount
     device_info: Optional[DeviceInfo] = None
@@ -120,6 +140,50 @@ class WithdrawalResponse(BaseModel):
 
 class WithdrawalReview(BaseModel):
     """Withdrawal review action"""
+    approved: bool
+    rejection_reason: Optional[str] = None
+
+
+# Platform Withdrawal Schemas
+class PlatformWithdrawalCreate(BaseModel):
+    """Create platform withdrawal order"""
+    amount_shrimp: float = Field(
+        ...,
+        gt=0,
+        le=10000000,  # Max 10,000,000 kg (1,000,000 RMB)
+        description="提现虾粮数量"
+    )
+    withdrawal_method: WithdrawalMethod
+    withdrawal_account: WithdrawalAccount
+    remarks: Optional[str] = Field(None, max_length=500)
+
+
+class PlatformWithdrawalResponse(BaseModel):
+    """Platform withdrawal order response"""
+    id: str = Field(..., alias="_id")
+    order_no: str
+    amount_shrimp: float
+    amount_rmb: float
+    exchange_rate: float
+    withdrawal_method: WithdrawalMethod
+    withdrawal_account: WithdrawalAccount
+    status: PlatformWithdrawalStatus
+    created_by: str
+    created_at: datetime
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+    transfer_order_no: Optional[str] = None
+    remarks: Optional[str] = None
+
+    class Config:
+        populate_by_name = True
+        json_encoders = {datetime: lambda v: v.isoformat()}
+
+
+class PlatformWithdrawalReview(BaseModel):
+    """Platform withdrawal review action"""
     approved: bool
     rejection_reason: Optional[str] = None
 

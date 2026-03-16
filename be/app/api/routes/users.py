@@ -15,10 +15,12 @@ async def get_user(user_id: str):
 
     try:
         user = await db.users.find_one({"_id": ObjectId(user_id)})
-    except:
+    except Exception as e:
+        # SECURITY: Validate ObjectId format
+        print(f"Invalid ObjectId in get_user: {user_id}, error: {e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid user ID"
+            detail="Invalid user ID format"
         )
 
     if not user:

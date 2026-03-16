@@ -38,7 +38,9 @@
       "Bash(curl -s http://localhost:8000/openapi.json | jq -r '.paths | keys[]' | sort)",
       "Bash(ls -la fe/.env* be/.env*)",
       "Bash(chmod +x test_api_client.sh && ./test_api_client.sh)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(find /Users/saulzhao/git/botbot/be -type f -name \"*payment*\" -o -name \"*payment*\" 2>/dev/null | head -20)",
+      "Bash(git rm check-deployment.sh fix-api-url.sh fix-chunk-error.sh fix-production.sh force-rebuild.sh redeploy.sh)"
     ]
   }
 }

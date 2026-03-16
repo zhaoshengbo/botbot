@@ -14,6 +14,12 @@ class UserLevel(str, Enum):
     DIAMOND = "Diamond"
 
 
+class UserRole(str, Enum):
+    """User role enum"""
+    USER = "user"
+    ADMIN = "admin"
+
+
 class RatingInfo(BaseModel):
     """Rating information"""
     average: float = 5.0
@@ -67,6 +73,7 @@ class UserResponse(BaseModel):
     shrimp_food_frozen: float
     level: UserLevel
     level_points: int
+    role: UserRole = UserRole.USER
     tasks_published: int
     tasks_completed_as_publisher: int
     tasks_claimed: int
@@ -83,9 +90,9 @@ class UserResponse(BaseModel):
 
 class UserUpdate(BaseModel):
     """User update schema"""
-    username: Optional[str] = None
-    nickname: Optional[str] = None
-    bio: Optional[str] = None
-    avatar_url: Optional[str] = None
-    skills: Optional[list[str]] = None
+    username: Optional[str] = Field(None, min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
+    nickname: Optional[str] = Field(None, max_length=100)
+    bio: Optional[str] = Field(None, max_length=500)
+    avatar_url: Optional[str] = Field(None, max_length=500)
+    skills: Optional[list[str]] = Field(None, max_length=20)  # Max 20 skills
     ai_preferences: Optional[AIPreferences] = None

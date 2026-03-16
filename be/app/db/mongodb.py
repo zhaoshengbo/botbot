@@ -21,6 +21,15 @@ async def connect_to_mongo():
     # Create indexes
     await create_indexes()
 
+    # Initialize super admin if configured
+    if settings.SUPER_ADMIN_PHONE:
+        await mongodb.db.users.update_one(
+            {"phone_number": settings.SUPER_ADMIN_PHONE},
+            {"$set": {"role": "admin"}},
+            upsert=False
+        )
+        print(f"Super admin initialized: {settings.SUPER_ADMIN_PHONE}")
+
     print(f"Connected to MongoDB: {settings.MONGODB_DB_NAME}")
 
 
@@ -39,6 +48,7 @@ async def create_indexes():
     await db.users.create_index("phone_number", unique=True)
     await db.users.create_index("username")
     await db.users.create_index("level")
+    await db.users.create_index("role")
 
     # Tasks collection indexes
     await db.tasks.create_index("publisher_id")
@@ -78,6 +88,15 @@ async def create_indexes():
     await db.transaction_logs.create_index([("user_id", 1), ("created_at", -1)])
     await db.transaction_logs.create_index([("transaction_type", 1), ("created_at", -1)])
     await db.transaction_logs.create_index("related_order_id")
+
+    # Platform withdrawal orders indexes
+    await db.platform_withdrawal_orders.create_index("order_no", unique=True)
+    await db.platform_withdrawal_orders.create_index([("status", 1), ("created_at", -1)])
+    await db.platform_withdrawal_orders.create_index("created_by")
+
+    # Admin operation logs indexes
+    await db.admin_operation_logs.create_index([("operator_id", 1), ("timestamp", -1)])
+    await db.admin_operation_logs.create_index([("target_user_id", 1), ("timestamp", -1)])
 
 
 def get_database() -> AsyncIOMotorDatabase:
