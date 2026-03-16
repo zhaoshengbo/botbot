@@ -12,6 +12,9 @@ import type {
   Rating,
   RatingListResponse,
   AnalyzeTaskResponse,
+  PaymentMethod,
+  RechargeCreateResponse,
+  RechargeOrder,
 } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -296,6 +299,20 @@ class APIClient {
     const { data } = await this.client.get('/ratings/my-ratings', {
       params: { rating_type: ratingType },
     });
+    return data;
+  }
+
+  // Payment APIs
+  async createRechargeOrder(data: {
+    amount_rmb: number;
+    payment_method: PaymentMethod;
+  }): Promise<RechargeCreateResponse> {
+    const { data: response } = await this.client.post('/payment/recharge/create', data);
+    return response;
+  }
+
+  async getRechargeOrder(orderNo: string): Promise<RechargeOrder> {
+    const { data } = await this.client.get(`/payment/recharge/${orderNo}`);
     return data;
   }
 }

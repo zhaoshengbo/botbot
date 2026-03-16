@@ -168,3 +168,48 @@ export interface AnalyzeTaskResponse {
   analysis: AIAnalysis;
   should_bid: boolean;
 }
+
+// Payment enums
+export enum PaymentMethod {
+  Alipay = "alipay",
+  Wechat = "wechat",
+}
+
+export enum RechargeStatus {
+  Pending = "pending",
+  Success = "success",
+  Failed = "failed",
+  Cancelled = "cancelled",
+}
+
+// Payment interfaces
+export interface RechargeCreateRequest {
+  amount_rmb: number;
+  payment_method: PaymentMethod;
+}
+
+export interface RechargeCreateResponse {
+  success: boolean;
+  order: {
+    order_no: string;
+    amount_rmb: number;
+    amount_shrimp: number;
+    status: RechargeStatus;
+  };
+  payment_info: {
+    order_no: string;
+    payment_method: string;
+    payment_url?: string;  // Alipay
+    qr_code?: string;      // WeChat code_url
+  };
+}
+
+export interface RechargeOrder {
+  id: string;
+  order_no: string;
+  amount_rmb: number;
+  amount_shrimp: number;
+  payment_status: RechargeStatus;
+  payment_time?: string;
+  created_at: string;
+}

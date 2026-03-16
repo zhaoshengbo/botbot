@@ -50,11 +50,17 @@ export default function Navbar() {
           <div className="flex items-center">
             {user ? (
               <div className="flex items-center space-x-4">
-                <div className="text-sm">
+                <div className="text-sm flex items-center">
                   <span className="text-gray-600">Balance:</span>
                   <span className="ml-2 font-bold text-orange-600">
                     {user.shrimp_food_balance.toFixed(1)}kg 🦐
                   </span>
+                  <Link
+                    href="/recharge"
+                    className="ml-3 text-xs bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600 transition"
+                  >
+                    + Recharge
+                  </Link>
                 </div>
                 <Link
                   href="/profile"
