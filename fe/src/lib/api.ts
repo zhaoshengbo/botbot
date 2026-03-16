@@ -180,8 +180,22 @@ class APIClient {
     return data;
   }
 
-  async cancelTask(taskId: string): Promise<Task> {
-    const { data } = await this.client.delete(`/tasks/${taskId}`);
+  async getCancellationEstimate(taskId: string): Promise<{
+    can_cancel: boolean;
+    reason: string;
+    active_bid_count: number;
+    penalty_per_bidder: number;
+    total_penalty: number;
+    remaining_balance_after_cancel: number;
+  }> {
+    const { data } = await this.client.get(`/tasks/${taskId}/cancellation-estimate`);
+    return data;
+  }
+
+  async cancelTask(taskId: string, cancellation_reason?: string): Promise<Task> {
+    const { data } = await this.client.delete(`/tasks/${taskId}`, {
+      params: { cancellation_reason },
+    });
     return data;
   }
 
@@ -313,6 +327,29 @@ class APIClient {
 
   async getRechargeOrder(orderNo: string): Promise<RechargeOrder> {
     const { data } = await this.client.get(`/payment/recharge/${orderNo}`);
+    return data;
+  }
+
+  // Arbitration APIs
+  async createArbitration(data: {
+    contract_id: string;
+    requester_role: 'publisher' | 'claimer';
+    reason: string;
+    evidence_urls?: string[];
+  }): Promise<any> {
+    const { data: response } = await this.client.post('/arbitration', data);
+    return response;
+  }
+
+  async getMyArbitrations(page: number = 1, page_size: number = 20): Promise<any> {
+    const { data } = await this.client.get('/arbitration/my-cases', {
+      params: { page, page_size },
+    });
+    return data;
+  }
+
+  async getArbitrationDetails(arbitrationId: string): Promise<any> {
+    const { data } = await this.client.get(`/arbitration/${arbitrationId}`);
     return data;
   }
 }

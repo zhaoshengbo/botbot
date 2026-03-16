@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api';
 import type { Task, Bid, AnalyzeTaskResponse } from '@/types';
 import Navbar from '@/components/Navbar';
 import { formatDistanceToNow } from 'date-fns';
+import toast from 'react-hot-toast';
 
 export default function TaskDetailPage() {
   const params = useParams();
@@ -25,6 +26,12 @@ export default function TaskDetailPage() {
   const [bidAmount, setBidAmount] = useState('');
   const [bidMessage, setBidMessage] = useState('');
   const [submittingBid, setSubmittingBid] = useState(false);
+
+  // Cancel task
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancellationEstimate, setCancellationEstimate] = useState<any>(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [cancellingTask, setCancellingTask] = useState(false);
 
   const loadTaskData = useCallback(async () => {
     try {
@@ -63,9 +70,10 @@ export default function TaskDetailPage() {
       if (analysis.suggested_bid_amount) {
         setBidAmount(analysis.suggested_bid_amount.toString());
       }
+      toast.success('AI analysis completed!');
     } catch (error) {
       console.error('AI analysis failed:', error);
-      alert('Failed to analyze task with AI');
+      toast.error('Failed to analyze task with AI');
     } finally {
       setAnalyzingAI(false);
     }
@@ -86,14 +94,14 @@ export default function TaskDetailPage() {
         false
       );
 
-      alert('Bid submitted successfully!');
+      toast.success('Bid submitted successfully!');
       setShowBidForm(false);
       setBidAmount('');
       setBidMessage('');
       setAiAnalysis(null);
       loadTaskData();
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to submit bid');
+      toast.error(error.response?.data?.detail || 'Failed to submit bid');
     } finally {
       setSubmittingBid(false);
     }
@@ -104,10 +112,44 @@ export default function TaskDetailPage() {
 
     try {
       await apiClient.createContract(bidId);
-      alert('Contract created successfully!');
+      toast.success('Contract created successfully!');
       router.push('/contracts');
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to accept bid');
+      toast.error(error.response?.data?.detail || 'Failed to accept bid');
+    }
+  };
+
+  const handleShowCancelDialog = async () => {
+    try {
+      const estimate = await apiClient.getCancellationEstimate(taskId);
+      setCancellationEstimate(estimate);
+      setShowCancelDialog(true);
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to get cancellation estimate');
+    }
+  };
+
+  const handleCancelTask = async () => {
+    if (!cancellationEstimate) return;
+
+    if (!confirm(
+      cancellationEstimate.total_penalty > 0
+        ? `This will cost ${cancellationEstimate.total_penalty}kg in penalties. Continue?`
+        : 'Are you sure you want to cancel this task?'
+    )) {
+      return;
+    }
+
+    try {
+      setCancellingTask(true);
+      await apiClient.cancelTask(taskId, cancellationReason || undefined);
+      toast.success('Task cancelled successfully!');
+      setShowCancelDialog(false);
+      setTimeout(() => router.push('/'), 1000);
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to cancel task');
+    } finally {
+      setCancellingTask(false);
     }
   };
 
@@ -242,24 +284,131 @@ export default function TaskDetailPage() {
           </div>
 
           {/* Actions */}
-          {canBid && (
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setShowBidForm(!showBidForm)}
-                className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 font-medium"
-              >
-                {showBidForm ? 'Cancel' : 'Place Bid'}
-              </button>
-              <button
-                onClick={handleAnalyzeWithAI}
-                disabled={analyzingAI}
-                className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 font-medium disabled:bg-gray-400"
-              >
-                {analyzingAI ? 'Analyzing...' : '🤖 Analyze with AI'}
-              </button>
+          <div className="flex justify-between items-center">
+            <div>
+              {canBid && (
+                <div className="flex space-x-4">
+                  <button
+                    onClick={() => setShowBidForm(!showBidForm)}
+                    className="bg-red-500 text-white px-6 py-2 rounded-md hover:bg-red-600 font-medium"
+                  >
+                    {showBidForm ? 'Cancel' : 'Place Bid'}
+                  </button>
+                  <button
+                    onClick={handleAnalyzeWithAI}
+                    disabled={analyzingAI}
+                    className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 font-medium disabled:bg-gray-400"
+                  >
+                    {analyzingAI ? 'Analyzing...' : '🤖 Analyze with AI'}
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+
+            {/* Cancel Task Button - For Publisher */}
+            {isPublisher && (task.status === 'open' || task.status === 'bidding' || task.status === 'selecting') && (
+              <button
+                onClick={handleShowCancelDialog}
+                className="bg-gray-500 text-white px-6 py-2 rounded-md hover:bg-gray-600 font-medium"
+              >
+                Cancel Task
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Cancel Task Dialog */}
+        {showCancelDialog && cancellationEstimate && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-lg w-full p-6">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">Cancel Task</h3>
+
+              {cancellationEstimate.can_cancel ? (
+                <div>
+                  {/* Cancellation Cost Info */}
+                  <div className={`rounded-lg p-4 mb-4 ${
+                    cancellationEstimate.total_penalty > 0
+                      ? 'bg-yellow-50 border border-yellow-200'
+                      : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-600">Active Bids</p>
+                      <p className="text-2xl font-bold text-gray-900">{cancellationEstimate.active_bid_count}</p>
+                    </div>
+
+                    {cancellationEstimate.total_penalty > 0 ? (
+                      <>
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-600">Penalty per Bidder</p>
+                          <p className="text-xl font-bold text-orange-600">{cancellationEstimate.penalty_per_bidder.toFixed(1)}kg</p>
+                        </div>
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-600">Total Penalty</p>
+                          <p className="text-2xl font-bold text-red-600">{cancellationEstimate.total_penalty.toFixed(1)}kg 🦐</p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Balance After Cancellation</p>
+                          <p className="text-xl font-semibold text-gray-900">{cancellationEstimate.remaining_balance_after_cancel.toFixed(1)}kg</p>
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-green-700 font-medium">✅ No penalty - Free cancellation</p>
+                    )}
+                  </div>
+
+                  {/* Cancellation Reason */}
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Reason (Optional)
+                    </label>
+                    <textarea
+                      value={cancellationReason}
+                      onChange={(e) => setCancellationReason(e.target.value)}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                      placeholder="Why are you cancelling this task?"
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => {
+                        setShowCancelDialog(false);
+                        setCancellationEstimate(null);
+                        setCancellationReason('');
+                      }}
+                      disabled={cancellingTask}
+                      className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 disabled:bg-gray-100"
+                    >
+                      Go Back
+                    </button>
+                    <button
+                      onClick={handleCancelTask}
+                      disabled={cancellingTask}
+                      className="flex-1 bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 disabled:bg-gray-400"
+                    >
+                      {cancellingTask ? 'Cancelling...' : 'Confirm Cancel'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-red-600 mb-4">{cancellationEstimate.reason}</p>
+                  <button
+                    onClick={() => {
+                      setShowCancelDialog(false);
+                      setCancellationEstimate(null);
+                    }}
+                    className="w-full bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* AI Analysis Results */}
         {aiAnalysis && (

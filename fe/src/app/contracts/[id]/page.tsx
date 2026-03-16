@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/api';
 import type { Contract } from '@/types';
 import Navbar from '@/components/Navbar';
 import { formatDistanceToNow } from 'date-fns';
+import toast from 'react-hot-toast';
 
 export default function ContractDetailPage() {
   const params = useParams();
@@ -21,6 +22,12 @@ export default function ContractDetailPage() {
   const [reviewing, setReviewing] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectionForm, setShowRejectionForm] = useState(false);
+
+  // Arbitration
+  const [showArbitrationDialog, setShowArbitrationDialog] = useState(false);
+  const [arbitrationReason, setArbitrationReason] = useState('');
+  const [evidenceUrls, setEvidenceUrls] = useState('');
+  const [submittingArbitration, setSubmittingArbitration] = useState(false);
 
   const loadContract = useCallback(async () => {
     try {
@@ -47,18 +54,18 @@ export default function ContractDetailPage() {
     e.preventDefault();
 
     if (!deliverablesUrl.trim()) {
-      alert('Please provide a URL for deliverables');
+      toast.error('Please provide a URL for deliverables');
       return;
     }
 
     try {
       setSubmittingDeliverables(true);
       await apiClient.submitDeliverables(contractId, deliverablesUrl);
-      alert('Deliverables submitted successfully!');
+      toast.success('Deliverables submitted successfully!');
       setDeliverablesUrl('');
       loadContract();
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to submit deliverables');
+      toast.error(error.response?.data?.detail || 'Failed to submit deliverables');
     } finally {
       setSubmittingDeliverables(false);
     }
@@ -72,10 +79,10 @@ export default function ContractDetailPage() {
     try {
       setReviewing(true);
       await apiClient.completeContract(contractId, true);
-      alert('Contract completed! Shrimp food transferred.');
-      router.push('/contracts');
+      toast.success('Contract completed! Shrimp food transferred.');
+      setTimeout(() => router.push('/contracts'), 1000);
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to complete contract');
+      toast.error(error.response?.data?.detail || 'Failed to complete contract');
     } finally {
       setReviewing(false);
     }
@@ -85,7 +92,7 @@ export default function ContractDetailPage() {
     e.preventDefault();
 
     if (!rejectionReason.trim()) {
-      alert('Please provide a reason for rejection');
+      toast.error('Please provide a reason for rejection');
       return;
     }
 
@@ -96,12 +103,12 @@ export default function ContractDetailPage() {
     try {
       setReviewing(true);
       await apiClient.completeContract(contractId, false, rejectionReason);
-      alert('Deliverables rejected. Contract marked as disputed.');
+      toast.success('Deliverables rejected. Contract marked as disputed.');
       loadContract();
       setShowRejectionForm(false);
       setRejectionReason('');
     } catch (error: any) {
-      alert(error.response?.data?.detail || 'Failed to reject deliverables');
+      toast.error(error.response?.data?.detail || 'Failed to reject deliverables');
     } finally {
       setReviewing(false);
     }
@@ -109,7 +116,7 @@ export default function ContractDetailPage() {
 
   const handleSendEmail = () => {
     if (!contract?.publisher_email) {
-      alert('Publisher has not provided an email address');
+      toast.error('Publisher has not provided an email address');
       return;
     }
 
@@ -140,9 +147,53 @@ export default function ContractDetailPage() {
 
     try {
       await navigator.clipboard.writeText(contract.publisher_email);
-      alert('Email copied to clipboard!');
+      toast.success('Email copied to clipboard!');
     } catch (err) {
-      alert('Failed to copy email');
+      toast.error('Failed to copy email');
+    }
+  };
+
+  const handleSubmitArbitration = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!arbitrationReason.trim()) {
+      toast.error('Please provide a reason for arbitration');
+      return;
+    }
+
+    if (arbitrationReason.length < 10) {
+      toast.error('Reason must be at least 10 characters');
+      return;
+    }
+
+    if (!confirm('Are you sure you want to submit an arbitration request? An admin will review the case.')) {
+      return;
+    }
+
+    try {
+      setSubmittingArbitration(true);
+
+      const evidenceUrlsList = evidenceUrls
+        .split('\n')
+        .map(url => url.trim())
+        .filter(url => url.length > 0);
+
+      await apiClient.createArbitration({
+        contract_id: contractId,
+        requester_role: isPublisher ? 'publisher' : 'claimer',
+        reason: arbitrationReason,
+        evidence_urls: evidenceUrlsList.length > 0 ? evidenceUrlsList : undefined,
+      });
+
+      toast.success('Arbitration request submitted! An admin will review your case.');
+      setShowArbitrationDialog(false);
+      setArbitrationReason('');
+      setEvidenceUrls('');
+      loadContract();
+    } catch (error: any) {
+      toast.error(error.response?.data?.detail || 'Failed to submit arbitration request');
+    } finally {
+      setSubmittingArbitration(false);
     }
   };
 
@@ -419,9 +470,110 @@ export default function ContractDetailPage() {
               <span className="text-red-600 text-2xl mr-3">⚠️</span>
               <h3 className="text-lg font-bold text-red-800">Contract Disputed</h3>
             </div>
-            <p className="text-gray-700">
-              This contract has been marked as disputed. Please contact support for resolution.
+            <p className="text-gray-700 mb-4">
+              This contract has been marked as disputed. You can request arbitration to resolve the issue.
             </p>
+            <button
+              onClick={() => setShowArbitrationDialog(true)}
+              className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 font-medium"
+            >
+              Request Arbitration
+            </button>
+          </div>
+        )}
+
+        {/* Arbitration Dialog */}
+        {showArbitrationDialog && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Request Arbitration</h3>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-800">
+                  <strong>What is arbitration?</strong><br />
+                  An admin will review the evidence from both parties and make a fair decision on how to split the payment.
+                  This helps resolve disputes when deliverables don't meet expectations.
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmitArbitration}>
+                {/* Your Role */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Role
+                  </label>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {isPublisher ? '📤 Publisher' : '🦞 Claimer'}
+                  </p>
+                </div>
+
+                {/* Contract Info */}
+                <div className="mb-4 p-3 bg-gray-50 rounded">
+                  <p className="text-sm text-gray-600">Task: <span className="font-semibold">{contract.task_title}</span></p>
+                  <p className="text-sm text-gray-600">Amount: <span className="font-semibold">{contract.amount}kg 🦐</span></p>
+                </div>
+
+                {/* Reason */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Arbitration *
+                  </label>
+                  <textarea
+                    value={arbitrationReason}
+                    onChange={(e) => setArbitrationReason(e.target.value)}
+                    rows={5}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={
+                      isPublisher
+                        ? "Explain why the deliverables don't meet the requirements..."
+                        : "Explain why you believe the deliverables meet the requirements..."
+                    }
+                    required
+                  />
+                  <p className="text-sm text-gray-500 mt-1">Minimum 10 characters, maximum 1000 characters</p>
+                </div>
+
+                {/* Evidence URLs */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Evidence URLs (Optional)
+                  </label>
+                  <textarea
+                    value={evidenceUrls}
+                    onChange={(e) => setEvidenceUrls(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://imgur.com/screenshot1.png&#10;https://drive.google.com/file/proof.pdf&#10;(one URL per line)"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Provide links to screenshots, documents, or other evidence (one per line)
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowArbitrationDialog(false);
+                      setArbitrationReason('');
+                      setEvidenceUrls('');
+                    }}
+                    disabled={submittingArbitration}
+                    className="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 disabled:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingArbitration || arbitrationReason.length < 10}
+                    className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 disabled:bg-gray-400"
+                  >
+                    {submittingArbitration ? 'Submitting...' : 'Submit Arbitration Request'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </main>
