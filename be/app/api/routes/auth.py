@@ -60,17 +60,40 @@ async def verify_code_and_login(request: VerifyCodeRequest):
         )
 
 
-# SECURITY: Direct login endpoint disabled - use verification code flow
-# @router.post("/direct-login", response_model=TokenResponse)
-# async def direct_login_or_register(request: SendCodeRequest):
-#     """Direct login/register with phone number only (no verification code)
-#     WARNING: This endpoint is disabled for security reasons.
-#     Use /send-code and /verify-code instead.
-#     """
-#     raise HTTPException(
-#         status_code=status.HTTP_403_FORBIDDEN,
-#         detail="Direct login is disabled. Please use verification code flow."
-#     )
+@router.post("/direct-login", response_model=TokenResponse)
+async def direct_login_or_register(request: SendCodeRequest):
+    """Direct login/register with phone number only (no verification code)
+
+    WARNING: This endpoint bypasses SMS verification for convenience.
+    Use with caution and consider implementing additional security measures
+    such as rate limiting, device fingerprinting, or IP whitelist.
+    """
+    try:
+        # Use a fixed verification code for direct login
+        # In production, consider adding additional verification methods
+        access_token, refresh_token, user_id = await auth_service.verify_code_and_login(
+            request.phone_number,
+            "123456"  # Use the mock verification code
+        )
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            token_type="bearer",
+            user_id=user_id
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        # SECURITY: Don't leak internal error details
+        print(f"Error in direct_login_or_register: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication failed. Please try again."
+        )
 
 
 @router.post("/refresh", response_model=dict)
