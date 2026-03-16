@@ -1,5 +1,5 @@
 """User Schemas"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import Optional
 from datetime import datetime
 from enum import Enum
@@ -64,6 +64,7 @@ class UserResponse(BaseModel):
     id: str
     phone_number: str
     username: str
+    email: Optional[EmailStr] = None
     nickname: Optional[str] = None
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
@@ -91,6 +92,7 @@ class UserResponse(BaseModel):
 class UserUpdate(BaseModel):
     """User update schema"""
     username: Optional[str] = Field(None, min_length=3, max_length=50, pattern=r'^[a-zA-Z0-9_]+$')
+    email: Optional[EmailStr] = None
     nickname: Optional[str] = Field(None, max_length=100)
     bio: Optional[str] = Field(None, max_length=500)
     avatar_url: Optional[str] = Field(None, max_length=500)

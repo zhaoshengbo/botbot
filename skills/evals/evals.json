@@ -1,0 +1,134 @@
+{
+  "skill_name": "botbot-openclaw",
+  "description": "Test cases for BotBot OpenClaw skill package",
+  "evals": [
+    {
+      "id": 1,
+      "eval_name": "authenticate-and-browse-tasks",
+      "prompt": "I'm a new lobster agent. Help me register on BotBot with phone 13800138888, then show me all available tasks with budget over 50kg.",
+      "expected_output": "Agent should: 1) Request verification code, 2) Login with code, 3) List tasks filtered by budget >= 50kg, 4) Display task titles, budgets, and IDs",
+      "files": [],
+      "assertions": [
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "verification code",
+          "description": "Should mention verification code request"
+        },
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "tasks",
+          "description": "Should display task list"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "ai-analysis-and-bid",
+      "prompt": "Analyze task ID 'task_123' using AI, and if it looks good, submit a competitive bid.",
+      "expected_output": "Agent should: 1) Call /api/ai/analyze-task, 2) Show feasibility_score and reasoning, 3) If can_complete=true, submit bid with suggested_bid_amount, 4) Confirm bid submission",
+      "files": [],
+      "assertions": [
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "feasibility",
+          "description": "Should show AI feasibility analysis"
+        },
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "bid",
+          "description": "Should submit or explain bid decision"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "complete-contract-with-email",
+      "prompt": "I completed contract 'contract_456'. The deliverable is at https://drive.google.com/file/abc123. Submit it via the platform and also send an email to the publisher if they provided their email.",
+      "expected_output": "Agent should: 1) POST to /api/contracts/{id}/deliverables, 2) Check if publisher_email exists in contract details, 3) If email exists, generate mailto: link or send email notification, 4) Confirm submission success",
+      "files": [],
+      "assertions": [
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "deliverable",
+          "description": "Should mention deliverable submission"
+        },
+        {
+          "type": "or",
+          "assertions": [
+            {
+              "type": "contains",
+              "target": "output",
+              "value": "email",
+              "description": "Should mention email if available"
+            },
+            {
+              "type": "contains",
+              "target": "output",
+              "value": "no email",
+              "description": "Should mention if email not available"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "eval_name": "auto-finance-setup",
+      "prompt": "Configure my agent to automatically recharge when balance drops below 30kg (recharge 100kg each time), and automatically withdraw when balance exceeds 600kg (withdraw 300kg each time).",
+      "expected_output": "Agent should: 1) Call PATCH /api/users/me with ai_preferences, 2) Set auto_recharge_enabled=true, auto_recharge_threshold=30, auto_recharge_amount=100, 3) Set auto_withdrawal_enabled=true, auto_withdrawal_threshold=600, auto_withdrawal_amount=300, 4) Confirm configuration saved",
+      "files": [],
+      "assertions": [
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "auto",
+          "description": "Should mention automation setup"
+        },
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "threshold",
+          "description": "Should reference threshold values"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "eval_name": "full-workflow-simulation",
+      "prompt": "Run a complete workflow: 1) Login as agent, 2) Find the most profitable task using AI analysis, 3) Bid on it, 4) If bid is accepted, simulate completing the work and submitting deliverables, 5) Check my new balance and rating.",
+      "expected_output": "Agent should execute full workflow showing: Authentication → Task discovery → AI analysis → Bidding → Contract acceptance (simulated) → Deliverable submission → Balance update → Rating display. Each step should be clearly logged.",
+      "files": [],
+      "assertions": [
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "login",
+          "description": "Should authenticate"
+        },
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "analysis",
+          "description": "Should use AI analysis"
+        },
+        {
+          "type": "contains",
+          "target": "output",
+          "value": "balance",
+          "description": "Should show balance update"
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "created": "2024-03-16",
+    "author": "BotBot Team",
+    "version": "1.0.0",
+    "notes": "These test cases cover core OpenClaw capabilities. Run against a local BotBot instance with docker-compose up -d."
+  }
+}

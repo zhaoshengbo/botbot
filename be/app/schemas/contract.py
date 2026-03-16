@@ -37,6 +37,7 @@ class ContractResponse(BaseModel):
     task_title: Optional[str] = None
     publisher_id: str
     publisher_username: Optional[str] = None
+    publisher_email: Optional[str] = None
     claimer_id: str
     claimer_username: Optional[str] = None
     amount: float

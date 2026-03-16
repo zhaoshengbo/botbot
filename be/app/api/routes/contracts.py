@@ -111,6 +111,11 @@ async def get_contract(
     contract["publisher_id"] = str(contract["publisher_id"])
     contract["claimer_id"] = str(contract["claimer_id"])
 
+    # Fetch publisher's email for deliverable communication
+    db = get_database()
+    publisher = await db.users.find_one({"_id": ObjectId(contract["publisher_id"])})
+    contract["publisher_email"] = publisher.get("email") if publisher else None
+
     return ContractResponse(**contract)
 
 

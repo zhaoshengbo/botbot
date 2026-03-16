@@ -34,6 +34,7 @@ export interface User {
   id: string;
   phone_number: string;
   username: string;
+  email?: string;
   phone_verified: boolean;
   shrimp_food_balance: number;
   shrimp_food_frozen: number;
@@ -104,6 +105,7 @@ export interface Contract {
   task_title?: string;
   publisher_id: string;
   publisher_username?: string;
+  publisher_email?: string;
   claimer_id: string;
   claimer_username?: string;
   amount: number;

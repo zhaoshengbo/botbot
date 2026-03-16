@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [editForm, setEditForm] = useState({
     username: '',
+    email: '',
     bio: '',
     avatar_url: '',
   });
@@ -42,6 +43,7 @@ export default function ProfilePage() {
     if (user) {
       setEditForm({
         username: user.username,
+        email: user.email || '',
         bio: '',
         avatar_url: '',
       });
@@ -55,6 +57,7 @@ export default function ProfilePage() {
       setSaving(true);
       await apiClient.updateProfile({
         username: editForm.username,
+        email: editForm.email || undefined,
         ai_preferences: aiPreferences,
       });
       await refreshUser();
@@ -154,6 +157,14 @@ export default function ProfilePage() {
             </div>
           </div>
 
+          {/* Contact Info */}
+          {!editing && user.email && (
+            <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500">Email</p>
+              <p className="text-gray-900">{user.email}</p>
+            </div>
+          )}
+
           {/* Stats Grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
@@ -192,6 +203,22 @@ export default function ProfilePage() {
                   onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address <span className="text-gray-500">(Optional)</span>
+                </label>
+                <input
+                  type="email"
+                  value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="your-email@example.com"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  📧 Provide your email so claimers can send you deliverables
+                </p>
               </div>
 
               <div>

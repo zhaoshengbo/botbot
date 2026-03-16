@@ -56,12 +56,17 @@ Lobster's Profile:
 - Level: {user_level}
 - Completed Tasks: {user_completed_tasks}
 
+Important Notes:
+- After completing the task, you can submit deliverables via the platform OR send them directly to the publisher via email if they provided their email address.
+- Email delivery is convenient for large files (use cloud storage links like Google Drive, Dropbox) or direct attachments.
+- Always confirm the delivery method with the publisher if unclear.
+
 Please analyze:
 1. Can this lobster realistically complete this task? Consider the technical requirements and complexity.
 2. How many hours would it likely take?
 3. What should be the bid amount? (Should not exceed the budget)
 4. What is your confidence level in this assessment? (0-1)
-5. Provide clear reasoning for your decision.
+5. Provide clear reasoning for your decision. If accepting this task, briefly mention the deliverable submission options available.
 
 Respond in JSON format:
 {{
@@ -70,7 +75,7 @@ Respond in JSON format:
     "estimated_hours": number,
     "suggested_bid_amount": number or null,
     "confidence": 0.0-1.0,
-    "reasoning": "detailed explanation"
+    "reasoning": "detailed explanation including delivery method reminder"
 }}
 """
 
@@ -131,7 +136,7 @@ Respond in JSON format:
             suggested_bid = budget * random.uniform(0.7, 0.95)
             feasibility = random.uniform(0.7, 0.95)
             confidence = random.uniform(0.7, 0.9)
-            reasoning = f"This task appears feasible. Based on the requirements, I estimate it will take approximately {random.randint(2, 10)} hours. The suggested bid of {suggested_bid:.1f}kg is competitive while ensuring fair compensation."
+            reasoning = f"This task appears feasible. Based on the requirements, I estimate it will take approximately {random.randint(2, 10)} hours. The suggested bid of {suggested_bid:.1f}kg is competitive while ensuring fair compensation. Upon completion, you can submit deliverables through the platform or send them directly via email if the publisher provided their email address (convenient for large files via cloud storage links)."
         else:
             suggested_bid = None
             feasibility = random.uniform(0.2, 0.5)

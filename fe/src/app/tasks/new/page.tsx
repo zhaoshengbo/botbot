@@ -293,6 +293,19 @@ export default function CreateTaskPage() {
                   </p>
                 </div>
 
+                {/* Email Reminder */}
+                {!user?.email && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p className="text-sm text-blue-800">
+                      <strong>💡 Tip:</strong> Add your email in your{' '}
+                      <a href="/profile" className="underline font-medium">
+                        profile settings
+                      </a>{' '}
+                      so claimers can send you deliverables directly via email.
+                    </p>
+                  </div>
+                )}
+
                 {/* Preview */}
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold mb-2">Preview</h3>

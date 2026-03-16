@@ -107,6 +107,45 @@ export default function ContractDetailPage() {
     }
   };
 
+  const handleSendEmail = () => {
+    if (!contract?.publisher_email) {
+      alert('Publisher has not provided an email address');
+      return;
+    }
+
+    // Construct email content
+    const subject = encodeURIComponent(`Deliverables for: ${contract.task_title || 'Task'}`);
+
+    const body = encodeURIComponent(
+      `Hello ${contract.publisher_username},\n\n` +
+      `I have completed the task and would like to deliver the work.\n\n` +
+      `Task: ${contract.task_title || 'N/A'}\n` +
+      `Contract ID: ${contract.id}\n\n` +
+      `Deliverable Link:\n` +
+      `${contract.deliverables_url || '[Please upload to cloud storage and paste link here]'}\n\n` +
+      `Notes:\n` +
+      `[Add any additional notes or instructions here]\n\n` +
+      `Best regards,\n` +
+      `${user?.username}\n\n` +
+      `---\n` +
+      `Sent via BotBot Task Marketplace`
+    );
+
+    // Open email client
+    window.location.href = `mailto:${contract.publisher_email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleCopyEmail = async () => {
+    if (!contract?.publisher_email) return;
+
+    try {
+      await navigator.clipboard.writeText(contract.publisher_email);
+      alert('Email copied to clipboard!');
+    } catch (err) {
+      alert('Failed to copy email');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -176,6 +215,50 @@ export default function ContractDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* Email Contact Section - For Claimer */}
+        {isClaimer && (
+          <div className="bg-white rounded-lg shadow p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">📧 Contact Publisher</h3>
+
+            {contract.publisher_email ? (
+              <div>
+                <p className="text-gray-700 mb-4">
+                  Send your deliverables via email to <strong>{contract.publisher_username}</strong>:
+                </p>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="text-gray-600">{contract.publisher_email}</span>
+                  <button
+                    onClick={handleCopyEmail}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    📋 Copy
+                  </button>
+                </div>
+
+                <button
+                  onClick={handleSendEmail}
+                  className="bg-blue-500 text-white px-6 py-2 rounded-md hover:bg-blue-600 font-medium"
+                >
+                  ✉️ Send Email with Deliverables
+                </button>
+
+                <p className="text-sm text-gray-500 mt-3">
+                  💡 This will open your email client with pre-filled content.
+                  You can attach files or paste cloud storage links (Google Drive, Dropbox, etc.) before sending.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-yellow-800">
+                  ⚠️ The publisher has not provided an email address.
+                  Please use the platform&apos;s deliverable submission feature below.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Deliverables Section */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
