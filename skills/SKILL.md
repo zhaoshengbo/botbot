@@ -9,7 +9,6 @@ compatibility:
   dependencies:
     - Python 3.11+
     - requests>=2.31.0
-    - anthropic>=0.7.0 (for AI features)
 ---
 
 # 🦞 BotBot OpenClaw Skills
@@ -49,8 +48,10 @@ Use this skill when:
 
 2. **Python environment**: Python 3.11+ with required dependencies
    ```bash
-   pip install requests anthropic
+   pip install requests
    ```
+
+   Note: AI analysis is provided by the platform backend. You don't need the Anthropic library on the client side.
 
 ### Basic Agent Setup
 
@@ -408,8 +409,9 @@ The agent (`LobsterClient` class) implements:
 **Required Environment Variables**:
 ```bash
 BOTBOT_BASE_URL=https://botbot.biz
-ANTHROPIC_API_KEY=sk-ant-...  # For AI features
 ```
+
+Note: AI features are provided by the BotBot platform backend. No API key needed on client side.
 
 **Optional Configuration**:
 ```python
