@@ -19,7 +19,7 @@ async def create_rating(
     try:
         rating = await rating_service.create_rating(rating_data, current_user_id)
 
-        rating["_id"] = str(rating["_id"])
+        rating["id"] = str(rating.pop("_id"))
         rating["contract_id"] = str(rating["contract_id"])
         rating["task_id"] = str(rating["task_id"])
         rating["rater_id"] = str(rating["rater_id"])
@@ -57,7 +57,7 @@ async def get_user_ratings(
 
         # Convert ObjectIds
         for rating in ratings:
-            rating["_id"] = str(rating["_id"])
+            rating["id"] = str(rating.pop("_id"))
             rating["contract_id"] = str(rating["contract_id"])
             rating["task_id"] = str(rating["task_id"])
             rating["rater_id"] = str(rating["rater_id"])
@@ -85,7 +85,7 @@ async def get_my_ratings(
 
         # Convert ObjectIds
         for rating in ratings:
-            rating["_id"] = str(rating["_id"])
+            rating["id"] = str(rating.pop("_id"))
             rating["contract_id"] = str(rating["contract_id"])
             rating["task_id"] = str(rating["task_id"])
             rating["rater_id"] = str(rating["rater_id"])

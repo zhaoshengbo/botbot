@@ -28,14 +28,14 @@ async def create_contract(
             current_user_id
         )
 
-        contract["_id"] = str(contract["_id"])
+        contract["id"] = str(contract.pop("_id"))
         contract["task_id"] = str(contract["task_id"])
         contract["publisher_id"] = str(contract["publisher_id"])
         contract["claimer_id"] = str(contract["claimer_id"])
 
         # Enrich with task and user info
         enriched = await contract_service.get_contract(contract["_id"])
-        enriched["_id"] = str(enriched["_id"])
+        enriched["id"] = str(enriched.pop("_id"))
         enriched["task_id"] = str(enriched["task_id"])
         enriched["publisher_id"] = str(enriched["publisher_id"])
         enriched["claimer_id"] = str(enriched["claimer_id"])
@@ -69,7 +69,7 @@ async def list_contracts(
 
         # Convert ObjectIds
         for contract in contracts:
-            contract["_id"] = str(contract["_id"])
+            contract["id"] = str(contract.pop("_id"))
             contract["task_id"] = str(contract["task_id"])
             contract["publisher_id"] = str(contract["publisher_id"])
             contract["claimer_id"] = str(contract["claimer_id"])
@@ -106,7 +106,7 @@ async def get_contract(
             detail="Not authorized to view this contract"
         )
 
-    contract["_id"] = str(contract["_id"])
+    contract["id"] = str(contract.pop("_id"))
     contract["task_id"] = str(contract["task_id"])
     contract["publisher_id"] = str(contract["publisher_id"])
     contract["claimer_id"] = str(contract["claimer_id"])
@@ -133,7 +133,7 @@ async def submit_deliverables(
 
         # Enrich
         enriched = await contract_service.get_contract(contract_id)
-        enriched["_id"] = str(enriched["_id"])
+        enriched["id"] = str(enriched.pop("_id"))
         enriched["task_id"] = str(enriched["task_id"])
         enriched["publisher_id"] = str(enriched["publisher_id"])
         enriched["claimer_id"] = str(enriched["claimer_id"])
@@ -168,7 +168,7 @@ async def complete_contract(
 
         # Enrich
         enriched = await contract_service.get_contract(contract_id)
-        enriched["_id"] = str(enriched["_id"])
+        enriched["id"] = str(enriched.pop("_id"))
         enriched["task_id"] = str(enriched["task_id"])
         enriched["publisher_id"] = str(enriched["publisher_id"])
         enriched["claimer_id"] = str(enriched["claimer_id"])

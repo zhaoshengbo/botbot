@@ -66,7 +66,7 @@ async def create_bid_v2(
         # Create bid with AI analysis
         bid = await bid_service.create_bid(bid_data.task_id, bid_data, current_user_id, analysis)
 
-        bid["_id"] = str(bid["_id"])
+        bid["id"] = str(bid.pop("_id"))
         bid["task_id"] = str(bid["task_id"])
         bid["bidder_id"] = str(bid["bidder_id"])
 
@@ -166,7 +166,7 @@ async def create_bid(
     try:
         bid = await bid_service.create_bid(task_id, bid_data, current_user_id, ai_analysis)
 
-        bid["_id"] = str(bid["_id"])
+        bid["id"] = str(bid.pop("_id"))
         bid["task_id"] = str(bid["task_id"])
         bid["bidder_id"] = str(bid["bidder_id"])
 
@@ -197,7 +197,7 @@ async def get_task_bids(
 
         # Convert ObjectIds
         for bid in bids:
-            bid["_id"] = str(bid["_id"])
+            bid["id"] = str(bid.pop("_id"))
             bid["task_id"] = str(bid["task_id"])
             bid["bidder_id"] = str(bid["bidder_id"])
 
@@ -228,7 +228,7 @@ async def get_my_bids(
 
         # Convert ObjectIds
         for bid in bids:
-            bid["_id"] = str(bid["_id"])
+            bid["id"] = str(bid.pop("_id"))
             bid["task_id"] = str(bid["task_id"])
             bid["bidder_id"] = str(bid["bidder_id"])
 
@@ -252,7 +252,7 @@ async def withdraw_bid(
     try:
         bid = await bid_service.withdraw_bid(bid_id, current_user_id)
 
-        bid["_id"] = str(bid["_id"])
+        bid["id"] = str(bid.pop("_id"))
         bid["task_id"] = str(bid["task_id"])
         bid["bidder_id"] = str(bid["bidder_id"])
 

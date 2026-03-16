@@ -120,5 +120,5 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
             detail="User not found"
         )
 
-    user["_id"] = str(user["_id"])
+    user["id"] = str(user.pop("_id"))
     return UserResponse(**user)

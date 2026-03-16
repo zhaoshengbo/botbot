@@ -45,7 +45,7 @@ class BidCreate(BaseModel):
 
 class BidResponse(BaseModel):
     """Bid response schema"""
-    id: str = Field(..., alias="_id")
+    id: str
     task_id: str
     bidder_id: str
     bidder_username: Optional[str] = None

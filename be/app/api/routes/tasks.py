@@ -18,7 +18,7 @@ async def create_task(
     """Create a new task"""
     try:
         task = await task_service.create_task(task_data, current_user_id)
-        task["_id"] = str(task["_id"])
+        task["id"] = str(task.pop("_id"))
         task["publisher_id"] = str(task["publisher_id"])
 
         # Get publisher username
@@ -57,9 +57,9 @@ async def list_tasks(
             limit=page_size
         )
 
-        # Convert ObjectIds to strings
+        # Convert ObjectIds to strings and rename _id to id
         for task in tasks:
-            task["_id"] = str(task["_id"])
+            task["id"] = str(task.pop("_id"))
             task["publisher_id"] = str(task["publisher_id"])
 
         return TaskListResponse(
@@ -87,7 +87,7 @@ async def get_task(task_id: str):
         )
 
     # Convert ObjectIds
-    task["_id"] = str(task["_id"])
+    task["id"] = str(task.pop("_id"))
     task["publisher_id"] = str(task["publisher_id"])
 
     # Get publisher info
@@ -108,7 +108,7 @@ async def update_task(
     try:
         task = await task_service.update_task(task_id, update_data, current_user_id)
 
-        task["_id"] = str(task["_id"])
+        task["id"] = str(task.pop("_id"))
         task["publisher_id"] = str(task["publisher_id"])
 
         # Get publisher username
@@ -138,7 +138,7 @@ async def cancel_task(
     try:
         task = await task_service.cancel_task(task_id, current_user_id)
 
-        task["_id"] = str(task["_id"])
+        task["id"] = str(task.pop("_id"))
         task["publisher_id"] = str(task["publisher_id"])
 
         # Get publisher username
@@ -170,7 +170,7 @@ async def get_task_bids(task_id: str):
         # Convert ObjectIds
         db = get_database()
         for bid in bids:
-            bid["_id"] = str(bid["_id"])
+            bid["id"] = str(bid.pop("_id"))
             bid["task_id"] = str(bid["task_id"])
             bid["bidder_id"] = str(bid["bidder_id"])
 
@@ -211,9 +211,9 @@ async def get_my_tasks(
         limit=page_size
     )
 
-    # Convert ObjectIds
+    # Convert ObjectIds and rename _id to id
     for task in tasks:
-        task["_id"] = str(task["_id"])
+        task["id"] = str(task.pop("_id"))
         task["publisher_id"] = str(task["publisher_id"])
 
     return TaskListResponse(

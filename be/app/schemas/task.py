@@ -38,7 +38,7 @@ class TaskUpdate(BaseModel):
 
 class TaskResponse(BaseModel):
     """Task response schema"""
-    id: str = Field(..., alias="_id")
+    id: str
     publisher_id: str
     publisher_username: Optional[str] = None
     title: str

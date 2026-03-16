@@ -61,7 +61,7 @@ class UserCreate(BaseModel):
 
 class UserResponse(BaseModel):
     """User response schema"""
-    id: str = Field(..., alias="_id")
+    id: str
     phone_number: str
     username: str
     nickname: Optional[str] = None

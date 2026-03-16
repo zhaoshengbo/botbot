@@ -23,7 +23,7 @@ class RatingCreate(BaseModel):
 
 class RatingResponse(BaseModel):
     """Rating response schema"""
-    id: str = Field(..., alias="_id")
+    id: str
     contract_id: str
     task_id: str
     rater_id: str

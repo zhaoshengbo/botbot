@@ -77,7 +77,7 @@ class RechargeCreate(BaseModel):
 
 class RechargeResponse(BaseModel):
     """Recharge order response"""
-    id: str = Field(..., alias="_id")
+    id: str
     user_id: str
     order_no: str
     amount_rmb: float
@@ -119,7 +119,7 @@ class WithdrawalCreate(BaseModel):
 
 class WithdrawalResponse(BaseModel):
     """Withdrawal order response"""
-    id: str = Field(..., alias="_id")
+    id: str
     user_id: str
     order_no: str
     amount_shrimp: float
@@ -160,7 +160,7 @@ class PlatformWithdrawalCreate(BaseModel):
 
 class PlatformWithdrawalResponse(BaseModel):
     """Platform withdrawal order response"""
-    id: str = Field(..., alias="_id")
+    id: str
     order_no: str
     amount_shrimp: float
     amount_rmb: float
@@ -191,7 +191,7 @@ class PlatformWithdrawalReview(BaseModel):
 # Transaction Log Schemas
 class TransactionLogResponse(BaseModel):
     """Transaction log response"""
-    id: str = Field(..., alias="_id")
+    id: str
     transaction_type: str
     user_id: Optional[str] = None
     amount: float

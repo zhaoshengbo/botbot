@@ -112,7 +112,7 @@ async def get_recharge_order(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Convert ObjectId to string
-    order["_id"] = str(order["_id"])
+    order["id"] = str(order.pop("_id"))
     order["user_id"] = str(order["user_id"])
 
     return RechargeResponse(**order)
@@ -137,7 +137,7 @@ async def list_recharge_orders(
 
     # Convert ObjectIds to strings
     for order in orders:
-        order["_id"] = str(order["_id"])
+        order["id"] = str(order.pop("_id"))
         order["user_id"] = str(order["user_id"])
 
     return [RechargeResponse(**order) for order in orders]
@@ -303,7 +303,7 @@ async def create_withdrawal_order(
         )
 
         # Convert ObjectIds to strings
-        order["_id"] = str(order["_id"])
+        order["id"] = str(order.pop("_id"))
         order["user_id"] = str(order["user_id"])
 
         return WithdrawalResponse(**order)
@@ -333,7 +333,7 @@ async def get_withdrawal_order(
         raise HTTPException(status_code=403, detail="Not authorized")
 
     # Convert ObjectIds to strings
-    order["_id"] = str(order["_id"])
+    order["id"] = str(order.pop("_id"))
     order["user_id"] = str(order["user_id"])
 
     return WithdrawalResponse(**order)
@@ -358,7 +358,7 @@ async def list_withdrawal_orders(
 
     # Convert ObjectIds to strings
     for order in orders:
-        order["_id"] = str(order["_id"])
+        order["id"] = str(order.pop("_id"))
         order["user_id"] = str(order["user_id"])
 
     return [WithdrawalResponse(**order) for order in orders]
@@ -376,7 +376,7 @@ async def cancel_withdrawal(
         order = await payment_service.cancel_withdrawal_order(order_no, user_id)
 
         # Convert ObjectIds to strings
-        order["_id"] = str(order["_id"])
+        order["id"] = str(order.pop("_id"))
         order["user_id"] = str(order["user_id"])
 
         return {
@@ -412,7 +412,7 @@ async def review_withdrawal(
         )
 
         # Convert ObjectIds to strings
-        order["_id"] = str(order["_id"])
+        order["id"] = str(order.pop("_id"))
         order["user_id"] = str(order["user_id"])
 
         return WithdrawalResponse(**order)
@@ -439,7 +439,7 @@ async def complete_withdrawal(
         )
 
         # Convert ObjectIds to strings
-        order["_id"] = str(order["_id"])
+        order["id"] = str(order.pop("_id"))
         order["user_id"] = str(order["user_id"])
 
         return {
@@ -489,7 +489,7 @@ async def get_transaction_logs(
 
     # Convert ObjectIds to strings
     for log in logs:
-        log["_id"] = str(log["_id"])
+        log["id"] = str(log.pop("_id"))
         if log.get("user_id"):
             log["user_id"] = str(log["user_id"])
 

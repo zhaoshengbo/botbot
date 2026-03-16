@@ -29,7 +29,7 @@ async def get_user(user_id: str):
             detail="User not found"
         )
 
-    user["_id"] = str(user["_id"])
+    user["id"] = str(user.pop("_id"))
     return UserResponse(**user)
 
 
@@ -70,7 +70,7 @@ async def update_current_user(
             detail="User not found"
         )
 
-    user["_id"] = str(user["_id"])
+    user["id"] = str(user.pop("_id"))
     return UserResponse(**user)
 
 

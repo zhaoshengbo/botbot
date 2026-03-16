@@ -32,7 +32,7 @@ class ContractComplete(BaseModel):
 
 class ContractResponse(BaseModel):
     """Contract response schema"""
-    id: str = Field(..., alias="_id")
+    id: str
     task_id: str
     task_title: Optional[str] = None
     publisher_id: str
