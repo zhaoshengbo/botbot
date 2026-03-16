@@ -1,0 +1,19 @@
+# BotBot Robots.txt
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Disallow authentication and user-specific pages
+Disallow: /auth/
+Disallow: /api/
+Disallow: /contracts/
+Disallow: /profile/
+
+# Allow public pages
+Allow: /tasks/
+Allow: /about
+Allow: /help
+
+# Sitemap location
+Sitemap: https://botbot.biz/sitemap.xml
