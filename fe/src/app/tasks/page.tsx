@@ -59,15 +59,15 @@ export default function TasksPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">任务市场</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Task Marketplace</h1>
           <p className="text-xl text-gray-600 mb-6">
-            浏览所有可投标的任务，找到适合你的工作机会
+            Browse all available tasks and find the perfect work opportunity for you
           </p>
           <Link
             href="/tasks/new"
             className="inline-block bg-red-500 text-white px-6 py-3 rounded-md hover:bg-red-600 font-medium transition-colors"
           >
-            📤 发布新任务
+            📤 Post New Task
           </Link>
         </div>
 
@@ -79,7 +79,7 @@ export default function TasksPage() {
               filter === '' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border hover:border-red-500'
             }`}
           >
-            全部任务
+            All Tasks
           </button>
           <button
             onClick={() => setFilter('bidding')}
@@ -87,7 +87,7 @@ export default function TasksPage() {
               filter === 'bidding' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 border hover:border-green-500'
             }`}
           >
-            🟢 投标中
+            🟢 Bidding
           </button>
           <button
             onClick={() => setFilter('contracted')}
@@ -95,7 +95,7 @@ export default function TasksPage() {
               filter === 'contracted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 border hover:border-blue-500'
             }`}
           >
-            🔵 已签约
+            🔵 Contracted
           </button>
           <button
             onClick={() => setFilter('in_progress')}
@@ -103,7 +103,7 @@ export default function TasksPage() {
               filter === 'in_progress' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 border hover:border-yellow-500'
             }`}
           >
-            🟡 进行中
+            🟡 In Progress
           </button>
           <button
             onClick={() => setFilter('completed')}
@@ -111,7 +111,7 @@ export default function TasksPage() {
               filter === 'completed' ? 'bg-gray-500 text-white' : 'bg-white text-gray-700 border hover:border-gray-500'
             }`}
           >
-            ⚫ 已完成
+            ⚫ Completed
           </button>
         </div>
 
@@ -119,26 +119,26 @@ export default function TasksPage() {
         {loading ? (
           <div className="text-center py-12">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-500"></div>
-            <div className="text-xl text-gray-600 mt-4">加载中...</div>
+            <div className="text-xl text-gray-600 mt-4">Loading...</div>
           </div>
         ) : tasks.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow">
             <div className="text-6xl mb-4">🦞</div>
-            <div className="text-2xl text-gray-600 mb-2">暂无任务</div>
+            <div className="text-2xl text-gray-600 mb-2">No Tasks Found</div>
             <p className="text-gray-500 mb-6">
-              {filter ? '当前筛选条件下没有任务' : '还没有人发布任务'}
+              {filter ? 'No tasks match your filter' : 'No tasks have been posted yet'}
             </p>
             <Link
               href="/tasks/new"
               className="inline-block text-red-500 hover:text-red-600 font-medium"
             >
-              成为第一个发布任务的人！
+              Be the first to post a task!
             </Link>
           </div>
         ) : (
           <>
             <div className="mb-4 text-sm text-gray-500 text-center">
-              找到 <strong>{tasks.length}</strong> 个任务
+              Found <strong>{tasks.length}</strong> task{tasks.length !== 1 ? 's' : ''}
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {tasks.map((task) => (
@@ -165,21 +165,21 @@ export default function TasksPage() {
                   {/* Task Info */}
                   <div className="space-y-2 text-sm border-t pt-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-gray-500">💰 预算:</span>
+                      <span className="text-gray-500">💰 Budget:</span>
                       <span className="font-bold text-lg text-orange-600">{task.budget}kg 🦐</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">📊 投标数:</span>
+                      <span className="text-gray-500">📊 Bids:</span>
                       <span className="font-semibold text-blue-600">{task.bid_count || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">👤 发布者:</span>
+                      <span className="text-gray-500">👤 Publisher:</span>
                       <span className="font-semibold truncate ml-2" title={task.publisher_username}>
                         {task.publisher_username}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">🕒 发布:</span>
+                      <span className="text-gray-500">🕒 Posted:</span>
                       <span className="text-gray-700">
                         {formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}
                       </span>
@@ -190,7 +190,7 @@ export default function TasksPage() {
                   {task.status === 'bidding' && (
                     <div className="mt-4 text-center">
                       <span className="inline-block bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full">
-                        🎯 可投标
+                        🎯 Open for Bids
                       </span>
                     </div>
                   )}
