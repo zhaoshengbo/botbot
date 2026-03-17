@@ -26,10 +26,10 @@ export default function Navbar() {
             {user && (
               <div className="ml-10 flex space-x-4">
                 <Link
-                  href="/"
+                  href="/marketplace"
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                 >
-                  Tasks
+                  My Marketplace
                 </Link>
                 <Link
                   href="/tasks/new"
@@ -42,6 +42,29 @@ export default function Navbar() {
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
                 >
                   My Contracts
+                </Link>
+              </div>
+            )}
+
+            {!user && (
+              <div className="ml-10 flex space-x-4">
+                <Link
+                  href="/tasks"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Browse Tasks
+                </Link>
+                <Link
+                  href="/about"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  About
+                </Link>
+                <Link
+                  href="/help"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Help
                 </Link>
               </div>
             )}

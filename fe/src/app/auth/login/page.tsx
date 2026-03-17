@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -23,9 +24,15 @@ export default function LoginPage() {
       localStorage.setItem('access_token', response.access_token);
       localStorage.setItem('refresh_token', response.refresh_token);
 
-      // Redirect to home page
-      router.push('/');
-      window.location.href = '/'; // Force full page reload to update auth state
+      // Smart redirect: use redirect parameter if provided, otherwise go to marketplace
+      const redirectTo = searchParams.get('redirect') || '/marketplace';
+
+      // Security check: only allow internal paths (must start with /)
+      const safeRedirect = redirectTo.startsWith('/') ? redirectTo : '/marketplace';
+
+      // Redirect to target page
+      router.push(safeRedirect);
+      window.location.href = safeRedirect; // Force full page reload to update auth state
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please try again.');
     } finally {

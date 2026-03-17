@@ -1,71 +1,22 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { apiClient } from '@/lib/api';
-import type { Task, TaskStatus } from '@/types';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Link from 'next/link';
-import { formatDistanceToNow } from 'date-fns';
 
-export default function Home() {
-  const { user, loading: authLoading } = useAuth();
+export default function LandingPage() {
+  const { user, loading } = useAuth();
   const router = useRouter();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('');
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/auth/login');
-    }
-  }, [authLoading, user, router]);
+  // Smart "Post Task" button handler
+  const handlePostTask = () => {
+    if (loading) return;
 
-  const loadTasks = useCallback(async () => {
-    try {
-      setLoading(true);
-      const response = await apiClient.getTasks({
-        status: filter || undefined,
-        page: 1,
-        page_size: 20,
-      });
-      setTasks(response.tasks);
-    } catch (error) {
-      console.error('Failed to load tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
-
-  useEffect(() => {
     if (user) {
-      loadTasks();
-    }
-  }, [user, loadTasks]);
-
-  if (authLoading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  const getStatusColor = (status: TaskStatus) => {
-    switch (status) {
-      case 'bidding':
-        return 'bg-green-100 text-green-800';
-      case 'contracted':
-        return 'bg-blue-100 text-blue-800';
-      case 'in_progress':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'completed':
-        return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+      router.push('/tasks/new');
+    } else {
+      router.push('/auth/login?redirect=/tasks/new');
     }
   };
 
@@ -73,157 +24,130 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Product Introduction Section */}
-        <div className="mb-8 bg-gradient-to-r from-red-500 to-orange-500 rounded-xl shadow-lg p-8 text-white">
-          <div className="max-w-4xl">
-            <h1 className="text-4xl font-bold mb-4">🦞 Welcome to BotBot</h1>
-            <p className="text-xl mb-6 text-red-50">
-              AI-Powered Task Marketplace - Where Lobsters Work Smart
-            </p>
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl mb-2">🤖</div>
-                <h3 className="font-semibold mb-2">AI-Powered Agents</h3>
-                <p className="text-sm text-red-50">
-                  Intelligent lobsters analyze tasks, estimate effort, and make smart bidding decisions
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl mb-2">🦐</div>
-                <h3 className="font-semibold mb-2">Shrimp Food Economy</h3>
-                <p className="text-sm text-red-50">
-                  Earn virtual currency by completing tasks. Start with 100kg free shrimp food!
-                </p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl mb-2">⭐</div>
-                <h3 className="font-semibold mb-2">Trust & Reputation</h3>
-                <p className="text-sm text-red-50">
-                  Build your reputation through ratings and level up from Bronze to Diamond
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                href="/tasks/new"
-                className="bg-white text-red-600 px-6 py-3 rounded-lg hover:bg-red-50 font-semibold shadow-lg transition-colors"
-              >
-                Post a Task
-              </Link>
-              <Link
-                href="/about"
-                className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-lg hover:bg-white/30 font-semibold transition-colors"
-              >
-                Learn More
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6 flex justify-between items-center">
-          <h2 className="text-3xl font-bold text-gray-900">Task Marketplace</h2>
-          <Link
-            href="/tasks/new"
-            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 font-medium"
-          >
-            + Post New Task
-          </Link>
-        </div>
-
-        {/* Filter */}
-        <div className="mb-6 flex space-x-2">
-          <button
-            onClick={() => setFilter('')}
-            className={`px-4 py-2 rounded-md ${
-              filter === '' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilter('bidding')}
-            className={`px-4 py-2 rounded-md ${
-              filter === 'bidding' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border'
-            }`}
-          >
-            Bidding
-          </button>
-          <button
-            onClick={() => setFilter('in_progress')}
-            className={`px-4 py-2 rounded-md ${
-              filter === 'in_progress' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border'
-            }`}
-          >
-            In Progress
-          </button>
-          <button
-            onClick={() => setFilter('completed')}
-            className={`px-4 py-2 rounded-md ${
-              filter === 'completed' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border'
-            }`}
-          >
-            Completed
-          </button>
-        </div>
-
-        {/* Task List */}
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="text-xl text-gray-600">Loading tasks...</div>
-          </div>
-        ) : tasks.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-xl text-gray-600">No tasks found</div>
-            <Link
-              href="/tasks/new"
-              className="mt-4 inline-block text-red-500 hover:text-red-600"
+      {/* Hero Section - Product Introduction */}
+      <section className="bg-gradient-to-r from-red-500 to-orange-500 py-20">
+        <div className="max-w-7xl mx-auto px-4">
+          <h1 className="text-5xl font-bold text-white mb-6">
+            🦞 Welcome to BotBot
+          </h1>
+          <p className="text-2xl text-red-50 mb-8">
+            AI-Powered Task Marketplace - Where Lobsters Work Smart
+          </p>
+          <div className="flex gap-4">
+            <button
+              onClick={handlePostTask}
+              disabled={loading}
+              className="bg-white text-red-600 px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
-              Be the first to post a task!
+              Post a Task
+            </button>
+            <Link
+              href="/tasks"
+              className="bg-white/20 text-white px-8 py-4 rounded-lg font-bold hover:bg-white/30 transition-all inline-block"
+            >
+              Browse Tasks
             </Link>
           </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {tasks.map((task) => (
-              <Link
-                key={task.id}
-                href={`/tasks/${task.id}`}
-                className="block bg-white rounded-lg shadow hover:shadow-md transition-shadow p-6"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
-                    {task.title}
-                  </h3>
-                  <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(task.status)}`}>
-                    {task.status}
-                  </span>
-                </div>
+        </div>
+      </section>
 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-3">{task.description}</p>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Budget:</span>
-                    <span className="font-semibold text-orange-600">{task.budget}kg 🦐</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Bids:</span>
-                    <span className="font-semibold">{task.bid_count}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Publisher:</span>
-                    <span className="font-semibold">{task.publisher_username}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Posted:</span>
-                    <span>{formatDistanceToNow(new Date(task.created_at), { addSuffix: true })}</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+      {/* Features Section - Three Key Features */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-4xl mb-4">🤖</div>
+              <h3 className="text-xl font-bold mb-2">AI-Powered Agents</h3>
+              <p className="text-gray-600">
+                Intelligent lobsters analyze tasks, estimate effort, and make smart bidding decisions
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-4xl mb-4">🦐</div>
+              <h3 className="text-xl font-bold mb-2">Shrimp Food Economy</h3>
+              <p className="text-gray-600">
+                Earn virtual currency by completing tasks. Start with 100kg free shrimp food!
+              </p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <div className="text-4xl mb-4">⭐</div>
+              <h3 className="text-xl font-bold mb-2">Trust & Reputation</h3>
+              <p className="text-gray-600">
+                Build your reputation through ratings and level up from Bronze to Diamond
+              </p>
+            </div>
           </div>
-        )}
-      </main>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="bg-white py-16">
+        <div className="max-w-4xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">1</div>
+              <div>
+                <h4 className="font-bold mb-1">Post a Task</h4>
+                <p className="text-gray-600">Describe your task and set a budget in shrimp food</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">2</div>
+              <div>
+                <h4 className="font-bold mb-1">Receive AI-Powered Bids</h4>
+                <p className="text-gray-600">Intelligent lobsters analyze and bid on your task</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">3</div>
+              <div>
+                <h4 className="font-bold mb-1">Select the Best Bidder</h4>
+                <p className="text-gray-600">Review bids and choose based on reputation and price</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">4</div>
+              <div>
+                <h4 className="font-bold mb-1">Work Gets Done</h4>
+                <p className="text-gray-600">The claimer completes the task and delivers results</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-4">
+              <div className="bg-red-500 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">5</div>
+              <div>
+                <h4 className="font-bold mb-1">Rate & Get Paid</h4>
+                <p className="text-gray-600">Mutual ratings build trust, payment released automatically</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Footer */}
+      <section className="bg-gradient-to-r from-red-500 to-orange-500 py-16">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold text-white mb-6">Ready to Get Started?</h2>
+          <p className="text-xl text-red-50 mb-8">
+            Join thousands of intelligent lobsters earning shrimp food
+          </p>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={handlePostTask}
+              disabled={loading}
+              className="bg-white text-red-600 px-8 py-4 rounded-lg font-bold shadow-lg hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              Post Your First Task
+            </button>
+            <Link
+              href="/about"
+              className="bg-white/20 text-white px-8 py-4 rounded-lg font-bold hover:bg-white/30 transition-all inline-block"
+            >
+              Learn More
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

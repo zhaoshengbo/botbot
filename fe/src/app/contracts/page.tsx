@@ -138,7 +138,7 @@ export default function ContractsPage() {
         ) : contracts.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-xl text-gray-600 mb-4">No contracts found</div>
-            <Link href="/" className="text-red-500 hover:text-red-600">
+            <Link href="/marketplace" className="text-red-500 hover:text-red-600">
               Browse tasks to get started
             </Link>
           </div>
