@@ -87,11 +87,7 @@ class AuthService:
                     as_publisher=0,
                     as_claimer=0
                 ).dict(),
-                "ai_preferences": AIPreferences(
-                    auto_bid_enabled=False,
-                    max_bid_amount=None,
-                    preferred_task_types=[]
-                ).dict(),
+                "ai_preferences": AIPreferences().dict(),
                 "tasks_published": 0,
                 "tasks_completed": 0,
                 "tasks_claimed": 0,

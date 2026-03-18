@@ -2,10 +2,25 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from bson import ObjectId
 from app.db.mongodb import get_database
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserResponse, UserUpdate, AIPreferences
 from app.core.security import get_current_user_id
 
 router = APIRouter()
+
+
+def ensure_ai_preferences(user_data: dict) -> dict:
+    """Ensure user has complete ai_preferences with all required fields"""
+    default_prefs = AIPreferences().dict()
+
+    if "ai_preferences" not in user_data or user_data["ai_preferences"] is None:
+        user_data["ai_preferences"] = default_prefs
+    else:
+        # Merge with defaults to fill in any missing fields
+        for key, value in default_prefs.items():
+            if key not in user_data["ai_preferences"]:
+                user_data["ai_preferences"][key] = value
+
+    return user_data
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -30,6 +45,7 @@ async def get_user(user_id: str):
         )
 
     user["id"] = str(user.pop("_id"))
+    user = ensure_ai_preferences(user)
     return UserResponse(**user)
 
 
@@ -71,6 +87,7 @@ async def update_current_user(
         )
 
     user["id"] = str(user.pop("_id"))
+    user = ensure_ai_preferences(user)
     return UserResponse(**user)
 
 

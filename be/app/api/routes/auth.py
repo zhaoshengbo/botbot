@@ -7,13 +7,28 @@ from app.schemas.auth import (
     TokenResponse,
     RefreshTokenRequest,
 )
-from app.schemas.user import UserResponse
+from app.schemas.user import UserResponse, AIPreferences
 from app.services.auth_service import auth_service
 from app.core.security import get_current_user_id
 from app.db.mongodb import get_database
 from bson import ObjectId
 
 router = APIRouter()
+
+
+def ensure_ai_preferences(user_data: dict) -> dict:
+    """Ensure user has complete ai_preferences with all required fields"""
+    default_prefs = AIPreferences().dict()
+
+    if "ai_preferences" not in user_data or user_data["ai_preferences"] is None:
+        user_data["ai_preferences"] = default_prefs
+    else:
+        # Merge with defaults to fill in any missing fields
+        for key, value in default_prefs.items():
+            if key not in user_data["ai_preferences"]:
+                user_data["ai_preferences"][key] = value
+
+    return user_data
 
 
 @router.post("/send-code", response_model=SendCodeResponse)
@@ -121,4 +136,8 @@ async def get_current_user(user_id: str = Depends(get_current_user_id)):
         )
 
     user["id"] = str(user.pop("_id"))
+
+    # Ensure ai_preferences has all required fields
+    user = ensure_ai_preferences(user)
+
     return UserResponse(**user)
