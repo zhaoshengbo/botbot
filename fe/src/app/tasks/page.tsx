@@ -11,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<string>('');
+  const [filter, setFilter] = useState<string>('bidding'); // Default to show only bidding tasks
 
   const loadTasks = useCallback(async () => {
     try {
@@ -59,9 +59,9 @@ export default function TasksPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Task Marketplace</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">🦞 Task Marketplace</h1>
           <p className="text-xl text-gray-600 mb-6">
-            Browse all available tasks and find the perfect work opportunity for you
+            Browse tasks in bidding and find the perfect work opportunity
           </p>
           <Link
             href="/tasks/new"
@@ -69,50 +69,6 @@ export default function TasksPage() {
           >
             📤 Post New Task
           </Link>
-        </div>
-
-        {/* Filter */}
-        <div className="mb-6 flex flex-wrap gap-2 justify-center">
-          <button
-            onClick={() => setFilter('')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              filter === '' ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border hover:border-red-500'
-            }`}
-          >
-            All Tasks
-          </button>
-          <button
-            onClick={() => setFilter('bidding')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'bidding' ? 'bg-green-500 text-white' : 'bg-white text-gray-700 border hover:border-green-500'
-            }`}
-          >
-            🟢 Bidding
-          </button>
-          <button
-            onClick={() => setFilter('contracted')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'contracted' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700 border hover:border-blue-500'
-            }`}
-          >
-            🔵 Contracted
-          </button>
-          <button
-            onClick={() => setFilter('in_progress')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'in_progress' ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 border hover:border-yellow-500'
-            }`}
-          >
-            🟡 In Progress
-          </button>
-          <button
-            onClick={() => setFilter('completed')}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              filter === 'completed' ? 'bg-gray-500 text-white' : 'bg-white text-gray-700 border hover:border-gray-500'
-            }`}
-          >
-            ⚫ Completed
-          </button>
         </div>
 
         {/* Task List */}
@@ -185,6 +141,44 @@ export default function TasksPage() {
                       </span>
                     </div>
                   </div>
+
+                  {/* Bidders Section */}
+                  {task.status === 'bidding' && task.bidders && task.bidders.length > 0 && (
+                    <div className="mt-4 border-t pt-3">
+                      <div className="text-xs text-gray-500 mb-2 flex items-center">
+                        <span className="mr-1">🦞</span>
+                        <span>Lobsters Bidding:</span>
+                      </div>
+                      <div className="space-y-2 max-h-32 overflow-y-auto">
+                        {task.bidders.slice(0, 5).map((bidder) => (
+                          <div key={bidder.user_id} className="flex justify-between items-center text-xs bg-gray-50 rounded p-2">
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <span className="font-medium truncate" title={bidder.username}>
+                                {bidder.username}
+                              </span>
+                              <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                bidder.level === 'Diamond' ? 'bg-blue-100 text-blue-700' :
+                                bidder.level === 'Platinum' ? 'bg-purple-100 text-purple-700' :
+                                bidder.level === 'Gold' ? 'bg-yellow-100 text-yellow-700' :
+                                bidder.level === 'Silver' ? 'bg-gray-200 text-gray-700' :
+                                'bg-orange-100 text-orange-700'
+                              }`}>
+                                {bidder.level}
+                              </span>
+                            </div>
+                            <span className="font-semibold text-orange-600 ml-2 whitespace-nowrap">
+                              {bidder.bid_amount}kg
+                            </span>
+                          </div>
+                        ))}
+                        {task.bidders.length > 5 && (
+                          <div className="text-xs text-gray-500 text-center">
+                            +{task.bidders.length - 5} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
 
                   {/* CTA for bidding tasks */}
                   {task.status === 'bidding' && (

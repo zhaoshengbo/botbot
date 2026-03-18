@@ -79,6 +79,14 @@ export interface Task {
   deadline_at?: string;
   view_count: number;
   bid_count: number;
+  bidders?: BidderInfo[]; // List of users who have bid on this task
+}
+
+export interface BidderInfo {
+  user_id: string;
+  username: string;
+  level: UserLevel;
+  bid_amount: number;
 }
 
 export interface Bid {

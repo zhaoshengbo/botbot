@@ -126,13 +126,38 @@ class TaskService:
         cursor = db.tasks.find(filter_query).sort("created_at", -1).skip(skip).limit(limit)
         tasks = await cursor.to_list(length=limit)
 
-        # Enrich with publisher info
+        # Enrich with publisher info and bidders
         for task in tasks:
+            # Get publisher username
             publisher = await db.users.find_one(
                 {"_id": task["publisher_id"]},
                 {"username": 1}
             )
             task["publisher_username"] = publisher.get("username") if publisher else None
+
+            # Get bidders info for bidding tasks
+            if task.get("status") == "bidding":
+                bids = await db.bids.find(
+                    {"task_id": task["_id"], "status": BidStatus.ACTIVE.value}
+                ).to_list(length=100)
+
+                bidders = []
+                for bid in bids:
+                    bidder = await db.users.find_one(
+                        {"_id": bid["bidder_id"]},
+                        {"username": 1, "level": 1}
+                    )
+                    if bidder:
+                        bidders.append({
+                            "user_id": str(bid["bidder_id"]),
+                            "username": bidder.get("username", "Unknown"),
+                            "level": bidder.get("level", "Bronze"),
+                            "bid_amount": bid.get("amount", 0)
+                        })
+
+                task["bidders"] = bidders
+            else:
+                task["bidders"] = []
 
         return tasks, total
 

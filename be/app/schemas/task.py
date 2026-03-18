@@ -1,6 +1,6 @@
 """Task Schemas"""
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 
@@ -37,6 +37,14 @@ class TaskUpdate(BaseModel):
     budget: Optional[float] = Field(None, gt=0)
 
 
+class BidderInfo(BaseModel):
+    """Bidder information in task list"""
+    user_id: str
+    username: str
+    level: str
+    bid_amount: float
+
+
 class TaskResponse(BaseModel):
     """Task response schema"""
     id: str
@@ -57,6 +65,7 @@ class TaskResponse(BaseModel):
     deadline_at: Optional[datetime] = None
     view_count: int = 0
     bid_count: int = 0
+    bidders: Optional[List[BidderInfo]] = None  # List of users who have bid
 
     class Config:
         populate_by_name = True
